@@ -7666,7 +7666,7 @@
         bondThickness: 1,
         bondLength: 30,
         shortBondLength: 0.8,
-        bondSpacing: 0.17 * 30,
+        bondSpacing: 0.2 * 30,
         atomVisualization: "default",
         isomeric: true,
         debug: false,
@@ -11466,7 +11466,7 @@
           } else {
             line = new Line(Vector2.add(a, normals[1]), Vector2.add(b, normals[1]), elementA, elementB);
           }
-          line.shorten(opts.bondLength - opts.shortBondLength * opts.bondLength);
+          line.shorten(opts.bondLength - opts.shortBondLength * opts.bondLength * 0.5);
           svgWrapper.drawLine(line, edge.isPartOfAromaticRing, color);
           svgWrapper.drawLine(new Line(a, b, elementA, elementB), false, color);
         } else if (edge.center || vertexA.isTerminal() && vertexB.isTerminal() || s.anCount == 0 && s.bnCount > 1 || s.bnCount == 0 && s.anCount > 1) {
@@ -11477,13 +11477,13 @@
         } else if (s.sideCount[0] > s.sideCount[1] || s.totalSideCount[0] > s.totalSideCount[1]) {
           this.multiplyNormals(normals, opts.bondSpacing);
           let line = new Line(Vector2.add(a, normals[0]), Vector2.add(b, normals[0]), elementA, elementB);
-          line.shorten(opts.bondLength - opts.shortBondLength * opts.bondLength);
+          line.shorten(opts.bondLength - opts.shortBondLength * opts.bondLength * 0.5);
           svgWrapper.drawLine(line, false, color);
           svgWrapper.drawLine(new Line(a, b, elementA, elementB), false, color);
         } else if (s.sideCount[0] < s.sideCount[1] || s.totalSideCount[0] <= s.totalSideCount[1]) {
           this.multiplyNormals(normals, opts.bondSpacing);
           let line = new Line(Vector2.add(a, normals[1]), Vector2.add(b, normals[1]), elementA, elementB);
-          line.shorten(opts.bondLength - opts.shortBondLength * opts.bondLength);
+          line.shorten(opts.bondLength - opts.shortBondLength * opts.bondLength * 0.5);
           svgWrapper.drawLine(line, false, color);
           svgWrapper.drawLine(new Line(a, b, elementA, elementB), false, color);
         }

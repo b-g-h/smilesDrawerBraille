@@ -199,9 +199,39 @@
             labelBraille.textContent = smiles;
         }
 
-        function downloadSVG(svgId, fileName) {
+        async function downloadSVG(svgId, fileName) {
             const svg = document.getElementById(svgId);
-            const svgData = new XMLSerializer().serializeToString(svg);
+            let svgData = new XMLSerializer().serializeToString(svg);
+
+            // Embed the font into the SVG to make it self-contained
+            try {
+                const fontUrl = './fonts/Euro850.ttf';
+                const fontResponse = await fetch(fontUrl);
+                if (fontResponse.ok) {
+                    const fontBlob = await fontResponse.blob();
+                    const fontBase64 = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                        reader.readAsDataURL(fontBlob);
+                    });
+
+                    const fontStyle = `
+                        <style>
+                            @font-face {
+                               font-family: 'Euro85: 24 pt';
+                               src: url('data:font/truetype;base64,${fontBase64}') format('truetype');
+                                font-weight: normal;
+                                font-style: normal;
+                            }
+                        </style>
+                    `;
+                    // Inject the style at the BEGINNING of the SVG, right after the opening <svg> tag
+                    svgData = svgData.replace(/<svg[^>]*>/, (match) => match + fontStyle);
+                }
+            } catch (e) {
+                console.error('Font embedding failed:', e);
+            }
+
             const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
             const svgUrl = URL.createObjectURL(svgBlob);
             const downloadLink = document.createElement('a');

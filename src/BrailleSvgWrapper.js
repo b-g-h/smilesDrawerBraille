@@ -9,6 +9,8 @@ import MathHelper from './MathHelper';
  *   • Keine Unicode-Sub-/Superscripts (Braille-Fonts rendern die meist falsch)
  *   • Alle Texte / Linien / Kreise sind per Theme bereits schwarz
  *   • Dickere, taktile Linien via höherer bondThickness
+ *   • KEINE SVG-Masken → bessere Inkscape-Kompatibilität
+ *   • Transform als SVG-Attribut statt CSS-Style
  */
 export default class BrailleSvgWrapper extends SvgWrapper {
     constructor(themeManager, target, options, clear = true) {
@@ -91,8 +93,10 @@ export default class BrailleSvgWrapper extends SvgWrapper {
     }
 
     /**
-     * Überschreibt write(), damit alle tspans explizit schwarz gefärbt werden
-     * (Theme-Fallback, falls der Browser irgendwo ein default-color einstreut).
+     * Überschreibt write():
+     *   • Keine Masken-Elemente (Inkscape-Kompatibilität)
+     *   • Text direkt schwarz statt weiß+schwarzer tspan
+     *   • Transform als SVG-Attribut statt CSS-Style
      */
     write(text, direction, x, y, singleVertex) {
         let bbox = SvgWrapper.measureText(text[0][1], this.opts.fontSizeLarge, this.opts.fontFamily);
@@ -130,14 +134,11 @@ export default class BrailleSvgWrapper extends SvgWrapper {
             }
         }
 
-        let cx = x;
-        let cy = y;
-
         let textElem = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         textElem.setAttributeNS(null, 'class', 'element');
+        // Direkt schwarz – kein weißer Text mehr
+        textElem.setAttributeNS(null, 'fill', '#000000');
         let g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-
-        textElem.setAttributeNS(null, 'fill', '#ffffff');
 
         if (direction === 'left') {
             text = text.reverse();
@@ -152,10 +153,7 @@ export default class BrailleSvgWrapper extends SvgWrapper {
 
         text.forEach((part, i) => {
             const display = part[0];
-            const elementName = part[1];
             let tspanElem = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-            // Immer schwarz für maximale Kontrast / Tastbarkeit
-            tspanElem.setAttributeNS(null, 'fill', '#000000');
             tspanElem.textContent = display;
 
             if (direction === 'up' || direction === 'down') {
@@ -184,21 +182,57 @@ export default class BrailleSvgWrapper extends SvgWrapper {
         }
 
         g.appendChild(textElem);
-        g.setAttributeNS(null, 'style', `transform: translateX(${x}px) translateY(${y}px)`);
+        // Inkscape-kompatibles Transform-Attribut statt CSS-Style
+        g.setAttributeNS(null, 'transform', `translate(${x}, ${y})`);
 
-        let maskRadius = this.opts.fontSizeLarge * 0.75;
-        if (text[0][1].length > 1) {
-            maskRadius = this.opts.fontSizeLarge * 1.1;
+        this.vertices.push(g);
+    }
+
+    /**
+     * Konstruiert das SVG OHNE Masken (Inkscape kann Masken oft nicht richtig rendern).
+     * Reihenfolge: defs → background → highlights → paths → vertices
+     * (vertices überdecken paths, also überdeckt der Text die Bindungslinien)
+     */
+    constructSvg() {
+        let defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs'),
+            background = document.createElementNS('http://www.w3.org/2000/svg', 'g'),
+            highlights = document.createElementNS('http://www.w3.org/2000/svg', 'g'),
+            paths = document.createElementNS('http://www.w3.org/2000/svg', 'g'),
+            vertices = document.createElementNS('http://www.w3.org/2000/svg', 'g'),
+            pathChildNodes = this.paths;
+
+        for (let path of pathChildNodes) {
+            paths.appendChild(path);
         }
 
-        let mask = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        mask.setAttributeNS(null, 'cx', cx);
-        mask.setAttributeNS(null, 'cy', cy);
-        mask.setAttributeNS(null, 'r', maskRadius);
-        mask.setAttributeNS(null, 'fill', 'black');
+        for (let backgroundItem of this.backgroundItems) {
+            background.appendChild(backgroundItem);
+        }
+        for (let highlight of this.highlights) {
+            highlights.appendChild(highlight);
+        }
+        for (let vertex of this.vertices) {
+            vertices.appendChild(vertex);
+        }
+        for (let gradient of this.gradients) {
+            defs.appendChild(gradient);
+        }
 
-        this.maskElements.push(mask);
-        this.vertices.push(g);
+        this.updateViewbox(this.opts.scale);
+
+        if (this.svg) {
+            this.svg.appendChild(defs);
+            this.svg.appendChild(background);
+            this.svg.appendChild(highlights);
+            this.svg.appendChild(paths);
+            this.svg.appendChild(vertices);
+        } else {
+            this.container.appendChild(defs);
+            this.container.appendChild(background);
+            this.container.appendChild(paths);
+            this.container.appendChild(vertices);
+            return this.container;
+        }
     }
 
     /**
@@ -217,7 +251,7 @@ export default class BrailleSvgWrapper extends SvgWrapper {
     }
 
     /**
-     * Punkte (implizite C-Atome) schwarz.
+     * Punkte (implizite C-Atome) schwarz – ohne Masken.
      */
     drawPoint(x, y, elementName) {
         let r = 0.75;
@@ -225,13 +259,6 @@ export default class BrailleSvgWrapper extends SvgWrapper {
         if (x + r > this.maxX) this.maxX = x + r;
         if (y - r < this.minY) this.minY = y - r;
         if (y + r > this.maxY) this.maxY = y + r;
-
-        let mask = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        mask.setAttributeNS(null, 'cx', x);
-        mask.setAttributeNS(null, 'cy', y);
-        mask.setAttributeNS(null, 'r', '1.5');
-        mask.setAttributeNS(null, 'fill', 'black');
-        this.maskElements.push(mask);
 
         let point = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         point.setAttributeNS(null, 'cx', x);

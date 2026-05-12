@@ -82,7 +82,7 @@ export default class BrailleSvgDrawer extends SvgDrawer {
 
         if (weights !== null) {
             this.opts.padding = optionBackup.padding;
-            this.opts.compactDrawing = optionBackup.padding;
+            this.opts.compactDrawing = optionBackup.compactDrawing;
         }
 
         return target;
