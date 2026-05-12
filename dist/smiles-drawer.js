@@ -7886,6 +7886,22 @@
             B: "#e67e22",
             SI: "#e67e22",
             H: "#666666"
+          },
+          "braille": {
+            FOREGROUND: "#000000",
+            BACKGROUND: "#ffffff",
+            C: "#000000",
+            O: "#000000",
+            N: "#000000",
+            F: "#000000",
+            CL: "#000000",
+            BR: "#000000",
+            I: "#000000",
+            P: "#000000",
+            S: "#000000",
+            B: "#000000",
+            SI: "#000000",
+            H: "#000000"
           }
         }
       };
@@ -9279,7 +9295,7 @@
         if (edge.bondType !== "=") continue;
         const vA = edge.sourceId;
         const vB = edge.targetId;
-        if (graph.vertices[vA].value.rings.length > 0 && graph.vertices[vB].value.rings.length > 0) {
+        if (this.areVerticesInSameRing(graph.vertices[vA], graph.vertices[vB])) {
           continue;
         }
         let stereoA = null, stereoB = null;
@@ -9324,19 +9340,8 @@
           const e = graph.getEdge(vB, nid);
           if (e && (e.bondType === "/" || e.bondType === "\\")) countB++;
         }
-        let flipId, pivotId;
-        if (countA <= countB) {
-          flipId = stereoA.nid;
-          pivotId = vA;
-        } else {
-          flipId = stereoB.nid;
-          pivotId = vB;
-        }
-        if (graph.vertices[flipId].value.rings.length > 0) {
-          flipId = pivotId === vA ? stereoB.nid : stereoA.nid;
-          pivotId = pivotId === vA ? vB : vA;
-          if (graph.vertices[flipId].value.rings.length > 0) continue;
-        }
+        const flipId = countA <= countB ? vA : vB;
+        const pivotId = countA <= countB ? vB : vA;
         const pivot = graph.vertices[pivotId].position;
         const len2 = ax * ax + ay * ay;
         if (len2 < 1e-3) continue;
@@ -13942,16 +13947,289 @@
     }
   };
 
+  // src/BrailleSvgWrapper.js
+  var BrailleSvgWrapper = class extends SvgWrapper {
+    constructor(themeManager, target, options, clear = true) {
+      super(themeManager, target, options, clear);
+      this.style.textContent = `
+            .element {
+                font: ${this.opts.fontSizeLarge}pt ${this.opts.fontFamily};
+                font-weight: normal;
+            }
+            .sub {
+                font: ${this.opts.fontSizeSmall}pt ${this.opts.fontFamily};
+            }
+        `;
+    }
+    /**
+     * Zeichnet Atomsymbole ohne Unicode-Ladungs-/Isotop-Zeichen,
+     * damit der Braille-Font korrekt rendern kann.
+     */
+    drawText(x, y, elementName, hydrogens, direction, isTerminal, charge, isotope, totalVertices, attachedPseudoElement = {}) {
+      let text = [];
+      let display = elementName;
+      if (charge !== 0 && charge !== null) {
+        if (charge === 1) display += "+";
+        else if (charge === -1) display += "-";
+        else if (charge > 1) display += "+" + charge;
+        else display += charge;
+      }
+      if (isotope !== 0 && isotope !== null) {
+        display = isotope + display;
+      }
+      text.push([display, elementName]);
+      if (hydrogens === 1) {
+        text.push(["H", "H"]);
+      } else if (hydrogens > 1) {
+        text.push(["H" + hydrogens, "H"]);
+      }
+      if (charge === 1 && elementName === "N" && "0O" in attachedPseudoElement && "0O-1" in attachedPseudoElement) {
+        attachedPseudoElement = {
+          "0O": { element: "O", count: 2, hydrogenCount: 0, previousElement: "C", charge: "" }
+        };
+        charge = 0;
+      }
+      for (let key of Object.keys(attachedPseudoElement)) {
+        let pe = attachedPseudoElement[key];
+        let pe_display = pe.element;
+        if (pe.count > 1) {
+          pe_display += pe.count;
+        }
+        if (pe.charge) {
+          if (pe.charge === 1) pe_display += "+";
+          else if (pe.charge === -1) pe_display += "-";
+          else pe_display += pe.charge;
+        }
+        text.push([pe_display, pe.element]);
+        const hcount = pe.hydrogenCount * pe.count;
+        if (hcount === 1) {
+          text.push(["H", "H"]);
+        } else if (hcount > 1) {
+          text.push(["H" + hcount, "H"]);
+        }
+      }
+      this.write(text, direction, x, y, totalVertices === 1);
+    }
+    /**
+     * Überschreibt write(), damit alle tspans explizit schwarz gefärbt werden
+     * (Theme-Fallback, falls der Browser irgendwo ein default-color einstreut).
+     */
+    write(text, direction, x, y, singleVertex) {
+      let bbox = SvgWrapper.measureText(text[0][1], this.opts.fontSizeLarge, this.opts.fontFamily);
+      if (direction === "left" && text[0][0] !== text[0][1]) {
+        let fullBbox = SvgWrapper.measureText(text[0][0], this.opts.fontSizeLarge, this.opts.fontFamily);
+        bbox.width = fullBbox.width;
+      }
+      if (singleVertex) {
+        if (x + bbox.width * text.length > this.maxX) this.maxX = x + bbox.width * text.length;
+        if (x - bbox.width / 2 < this.minX) this.minX = x - bbox.width / 2;
+        if (y - bbox.height < this.minY) this.minY = y - bbox.height;
+        if (y + bbox.height > this.maxY) this.maxY = y + bbox.height;
+      } else {
+        if (direction !== "right") {
+          if (x + bbox.width * text.length > this.maxX) this.maxX = x + bbox.width * text.length;
+          if (x - bbox.width * text.length < this.minX) this.minX = x - bbox.width * text.length;
+        } else if (direction !== "left") {
+          if (x + bbox.width * text.length > this.maxX) this.maxX = x + bbox.width * text.length;
+          if (x - bbox.width / 2 < this.minX) this.minX = x - bbox.width / 2;
+        }
+        if (y - bbox.height < this.minY) this.minY = y - bbox.height;
+        if (y + bbox.height > this.maxY) this.maxY = y + bbox.height;
+        if (direction === "down") {
+          if (y + 0.8 * bbox.height * text.length > this.maxY) {
+            this.maxY = y + 0.8 * bbox.height * text.length;
+          }
+        }
+        if (direction === "up") {
+          if (y - 0.8 * bbox.height * text.length < this.minY) {
+            this.minY = y - 0.8 * bbox.height * text.length;
+          }
+        }
+      }
+      let cx = x;
+      let cy = y;
+      let textElem = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      textElem.setAttributeNS(null, "class", "element");
+      let g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      textElem.setAttributeNS(null, "fill", "#ffffff");
+      if (direction === "left") {
+        text = text.reverse();
+      }
+      if (direction === "right" || direction === "down" || direction === "up") {
+        x -= bbox.width / 2;
+      }
+      if (direction === "left") {
+        x += bbox.width / 2;
+      }
+      text.forEach((part, i) => {
+        const display = part[0];
+        const elementName = part[1];
+        let tspanElem = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
+        tspanElem.setAttributeNS(null, "fill", "#000000");
+        tspanElem.textContent = display;
+        if (direction === "up" || direction === "down") {
+          tspanElem.setAttributeNS(null, "x", "0px");
+          if (direction === "up") {
+            tspanElem.setAttributeNS(null, "y", `-${0.9 * i}em`);
+          } else {
+            tspanElem.setAttributeNS(null, "y", `${0.9 * i}em`);
+          }
+        }
+        textElem.appendChild(tspanElem);
+      });
+      textElem.setAttributeNS(null, "data-direction", direction);
+      if (direction === "left" || direction === "right") {
+        textElem.setAttributeNS(null, "dominant-baseline", "alphabetic");
+        textElem.setAttributeNS(null, "y", "0.36em");
+      } else {
+        textElem.setAttributeNS(null, "dominant-baseline", "central");
+      }
+      if (direction === "left") {
+        textElem.setAttributeNS(null, "text-anchor", "end");
+      }
+      g.appendChild(textElem);
+      g.setAttributeNS(null, "style", `transform: translateX(${x}px) translateY(${y}px)`);
+      let maskRadius = this.opts.fontSizeLarge * 0.75;
+      if (text[0][1].length > 1) {
+        maskRadius = this.opts.fontSizeLarge * 1.1;
+      }
+      let mask = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      mask.setAttributeNS(null, "cx", cx);
+      mask.setAttributeNS(null, "cy", cy);
+      mask.setAttributeNS(null, "r", maskRadius);
+      mask.setAttributeNS(null, "fill", "black");
+      this.maskElements.push(mask);
+      this.vertices.push(g);
+    }
+    /**
+     * Ringe schwarz zeichnen (Original nutzt themeManager.getColor('C')).
+     */
+    drawRing(x, y, s) {
+      let circleElem = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      let radius = MathHelper.apothemFromSideLength(this.opts.bondLength, s);
+      circleElem.setAttributeNS(null, "cx", x);
+      circleElem.setAttributeNS(null, "cy", y);
+      circleElem.setAttributeNS(null, "r", radius - this.opts.bondSpacing);
+      circleElem.setAttributeNS(null, "stroke", "#000000");
+      circleElem.setAttributeNS(null, "stroke-width", this.opts.bondThickness);
+      circleElem.setAttributeNS(null, "fill", "none");
+      this.paths.push(circleElem);
+    }
+    /**
+     * Punkte (implizite C-Atome) schwarz.
+     */
+    drawPoint(x, y, elementName) {
+      let r = 0.75;
+      if (x - r < this.minX) this.minX = x - r;
+      if (x + r > this.maxX) this.maxX = x + r;
+      if (y - r < this.minY) this.minY = y - r;
+      if (y + r > this.maxY) this.maxY = y + r;
+      let mask = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      mask.setAttributeNS(null, "cx", x);
+      mask.setAttributeNS(null, "cy", y);
+      mask.setAttributeNS(null, "r", "1.5");
+      mask.setAttributeNS(null, "fill", "black");
+      this.maskElements.push(mask);
+      let point = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      point.setAttributeNS(null, "cx", x);
+      point.setAttributeNS(null, "cy", y);
+      point.setAttributeNS(null, "r", r);
+      point.setAttributeNS(null, "fill", "#000000");
+      this.vertices.push(point);
+    }
+    /**
+     * Bälle (atomVisualization === 'balls') schwarz.
+     */
+    drawBall(x, y, elementName) {
+      let r = this.opts.bondLength / 4.5;
+      if (x - r < this.minX) this.minX = x - r;
+      if (x + r > this.maxX) this.maxX = x + r;
+      if (y - r < this.minY) this.minY = y - r;
+      if (y + r > this.maxY) this.maxY = y + r;
+      let ball = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      ball.setAttributeNS(null, "cx", x);
+      ball.setAttributeNS(null, "cy", y);
+      ball.setAttributeNS(null, "r", r);
+      ball.setAttributeNS(null, "fill", "#000000");
+      this.vertices.push(ball);
+    }
+  };
+
+  // src/BrailleSvgDrawer.js
+  var BrailleSvgDrawer = class extends SvgDrawer {
+    constructor(options, clear = true) {
+      const brailleDefaults = {
+        fontFamily: "Euro850, Arial, sans-serif",
+        fontSizeLarge: 24,
+        fontSizeSmall: 8,
+        bondThickness: 2,
+        bondLength: 45,
+        padding: 20
+      };
+      const merged = Object.assign({}, brailleDefaults, options);
+      super(merged, clear);
+    }
+    draw(data, target, themeName = "braille", weights = null, infoOnly = false, highlight_atoms = [], weightsNormalized = false) {
+      if (target === null || target === "svg") {
+        target = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        target.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+        target.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+        target.setAttributeNS(null, "width", this.opts.width);
+        target.setAttributeNS(null, "height", this.opts.height);
+      } else if (target instanceof String) {
+        target = document.getElementById(target);
+      }
+      let optionBackup = {
+        padding: this.opts.padding,
+        compactDrawing: this.opts.compactDrawing
+      };
+      if (weights !== null) {
+        this.opts.padding += this.opts.weights.additionalPadding;
+        this.opts.compactDrawing = false;
+      }
+      let preprocessor = this.preprocessor;
+      preprocessor.initDraw(data, "braille", infoOnly, highlight_atoms);
+      if (!infoOnly) {
+        this.themeManager = new ThemeManager(this.opts.themes, "braille");
+        if (this.svgWrapper === null || this.clear) {
+          this.svgWrapper = new BrailleSvgWrapper(this.themeManager, target, this.opts, this.clear);
+        }
+      }
+      preprocessor.processGraph();
+      this.svgWrapper.determineDimensions(preprocessor.graph.vertices);
+      this.drawAtomHighlights(preprocessor.opts.debug);
+      this.drawEdges(preprocessor.opts.debug);
+      this.drawVertices(preprocessor.opts.debug);
+      if (weights !== null) {
+        this.drawWeights(weights, weightsNormalized);
+      }
+      if (preprocessor.opts.debug) {
+        console.debug("BrailleSvgDrawer::draw()", {
+          graph: preprocessor.graph,
+          rings: preprocessor.rings,
+          ringConnections: preprocessor.ringConnections
+        });
+      }
+      this.svgWrapper.constructSvg();
+      if (weights !== null) {
+        this.opts.padding = optionBackup.padding;
+        this.opts.compactDrawing = optionBackup.padding;
+      }
+      return target;
+    }
+  };
+
   // app.js
   var SmilesDrawerNS = {
-    Version: "2.2.1",
+    Version: "2.3.0",
     Drawer,
     GaussDrawer,
     Parser: Parser_default,
     ReactionDrawer,
     ReactionParser,
     SmiDrawer: SmilesDrawer,
-    SvgDrawer
+    SvgDrawer,
+    BrailleSvgDrawer
   };
   SmilesDrawerNS.clean = function(smiles) {
     return smiles.replace(/[^A-Za-z0-9@.+\-?!()[\]{}/\\=#$:*]/g, "");

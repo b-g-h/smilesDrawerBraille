@@ -6,6 +6,7 @@ import ReactionDrawer from './src/ReactionDrawer';
 import ReactionParser from './src/ReactionParser';
 import SmiDrawer      from './src/SmilesDrawer';
 import SvgDrawer      from './src/SvgDrawer';
+import BrailleSvgDrawer from './src/BrailleSvgDrawer';
 
 /**
  * The SmilesDrawer namespace.
@@ -21,6 +22,7 @@ const SmilesDrawerNS = {
     ReactionParser: ReactionParser,
     SmiDrawer:      SmiDrawer,
     SvgDrawer:      SvgDrawer,
+    BrailleSvgDrawer: BrailleSvgDrawer,
 };
 
 /**
