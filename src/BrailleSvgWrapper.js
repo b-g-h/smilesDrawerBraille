@@ -185,42 +185,51 @@ export default class BrailleSvgWrapper extends SvgWrapper {
         // Inkscape-kompatibles Transform-Attribut statt CSS-Style
         g.setAttributeNS(null, 'transform', `translate(${x}, ${y})`);
 
-        // Weißer Hintergrund verdeckt Bindungslinien hinter dem Text
-        // (ersetzt die entfernten SVG-Masken)
-        let rx = bbox.width * 0.9 + 2;
-        let ry = bbox.height * 0.85 + 2;
-        if (text.length > 1) {
-            if (direction === 'up' || direction === 'down') {
-                // Vertikal gestapelter Text → Höhe vergrößern
-                ry = bbox.height * (0.6 + text.length * 0.45) + 2;
-            } else {
-                // Horizontal nebeneinander → Breite vergrößern
-                rx = bbox.width * text.length * 0.7 + 2;
-            }
+        // Masken-Element für Text-Hintergrund (Linien werden hier ausgeschnitten)
+        let maskRadius = this.opts.fontSizeLarge * 0.75;
+        if (text[0][1].length > 1) {
+            maskRadius = this.opts.fontSizeLarge * 1.1;
         }
-        let bg = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-        bg.setAttributeNS(null, 'cx', 0);
-        bg.setAttributeNS(null, 'cy', 0);
-        bg.setAttributeNS(null, 'rx', rx);
-        bg.setAttributeNS(null, 'ry', ry);
-        bg.setAttributeNS(null, 'fill', '#ffffff');
-        g.insertBefore(bg, textElem);
+        let mask = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        mask.setAttributeNS(null, 'cx', x);
+        mask.setAttributeNS(null, 'cy', y);
+        mask.setAttributeNS(null, 'r', maskRadius);
+        mask.setAttributeNS(null, 'fill', 'black');
+        this.maskElements.push(mask);
 
         this.vertices.push(g);
     }
 
     /**
-     * Konstruiert das SVG OHNE Masken (Inkscape kann Masken oft nicht richtig rendern).
-     * Reihenfolge: defs → background → highlights → paths → vertices
-     * (vertices überdecken paths, also überdeckt der Text die Bindungslinien)
+     * Konstruiert das SVG MIT Masken (wie Original, aber mit korrigiertem Font).
      */
     constructSvg() {
         let defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs'),
+            masks = document.createElementNS('http://www.w3.org/2000/svg', 'mask'),
             background = document.createElementNS('http://www.w3.org/2000/svg', 'g'),
             highlights = document.createElementNS('http://www.w3.org/2000/svg', 'g'),
             paths = document.createElementNS('http://www.w3.org/2000/svg', 'g'),
             vertices = document.createElementNS('http://www.w3.org/2000/svg', 'g'),
             pathChildNodes = this.paths;
+
+        { // Set up the basic masking layer...
+            let mask = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            mask.setAttributeNS(null, 'x', this.minX);
+            mask.setAttributeNS(null, 'y', this.minY);
+            mask.setAttributeNS(null, 'width', this.maxX - this.minX);
+            mask.setAttributeNS(null, 'height', this.maxY - this.minY);
+            mask.setAttributeNS(null, 'fill', 'white');
+
+            masks.appendChild(mask);
+        }
+
+        // give the mask an id and set bounds explicitly for userSpaceOnUse
+        masks.setAttributeNS(null, 'id', this.uid + '-text-mask');
+        masks.setAttributeNS(null, 'maskUnits', 'userSpaceOnUse');
+        masks.setAttributeNS(null, 'x', this.minX);
+        masks.setAttributeNS(null, 'y', this.minY);
+        masks.setAttributeNS(null, 'width', this.maxX - this.minX);
+        masks.setAttributeNS(null, 'height', this.maxY - this.minY);
 
         for (let path of pathChildNodes) {
             paths.appendChild(path);
@@ -235,14 +244,20 @@ export default class BrailleSvgWrapper extends SvgWrapper {
         for (let vertex of this.vertices) {
             vertices.appendChild(vertex);
         }
+        for (let mask of this.maskElements) {
+            masks.appendChild(mask);
+        }
         for (let gradient of this.gradients) {
             defs.appendChild(gradient);
         }
+
+        paths.setAttributeNS(null, 'mask', 'url(#' + this.uid + '-text-mask)');
 
         this.updateViewbox(this.opts.scale);
 
         if (this.svg) {
             this.svg.appendChild(defs);
+            this.svg.appendChild(masks);
             this.svg.appendChild(background);
             this.svg.appendChild(highlights);
             this.svg.appendChild(paths);
@@ -272,7 +287,7 @@ export default class BrailleSvgWrapper extends SvgWrapper {
     }
 
     /**
-     * Punkte (implizite C-Atome) schwarz – ohne Masken.
+     * Punkte (implizite C-Atome) schwarz – mit Masken.
      */
     drawPoint(x, y, elementName) {
         let r = 0.75;
@@ -280,6 +295,14 @@ export default class BrailleSvgWrapper extends SvgWrapper {
         if (x + r > this.maxX) this.maxX = x + r;
         if (y - r < this.minY) this.minY = y - r;
         if (y + r > this.maxY) this.maxY = y + r;
+
+        // Masken-Element
+        let mask = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        mask.setAttributeNS(null, 'cx', x);
+        mask.setAttributeNS(null, 'cy', y);
+        mask.setAttributeNS(null, 'r', '1.5');
+        mask.setAttributeNS(null, 'fill', 'black');
+        this.maskElements.push(mask);
 
         let point = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         point.setAttributeNS(null, 'cx', x);
@@ -290,7 +313,7 @@ export default class BrailleSvgWrapper extends SvgWrapper {
     }
 
     /**
-     * Bälle (atomVisualization === 'balls') schwarz.
+     * Bälle (atomVisualization === 'balls') schwarz – mit Masken.
      */
     drawBall(x, y, elementName) {
         let r = this.opts.bondLength / 4.5;
@@ -298,6 +321,14 @@ export default class BrailleSvgWrapper extends SvgWrapper {
         if (x + r > this.maxX) this.maxX = x + r;
         if (y - r < this.minY) this.minY = y - r;
         if (y + r > this.maxY) this.maxY = y + r;
+
+        // Masken-Element
+        let mask = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        mask.setAttributeNS(null, 'cx', x);
+        mask.setAttributeNS(null, 'cy', y);
+        mask.setAttributeNS(null, 'r', r);
+        mask.setAttributeNS(null, 'fill', 'black');
+        this.maskElements.push(mask);
 
         let ball = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         ball.setAttributeNS(null, 'cx', x);
