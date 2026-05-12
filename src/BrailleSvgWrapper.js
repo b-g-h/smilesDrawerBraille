@@ -188,7 +188,7 @@ export default class BrailleSvgWrapper extends SvgWrapper {
         // Weißer Hintergrund verdeckt Bindungslinien hinter dem Text
         // (ersetzt die entfernten SVG-Masken)
         let rx = bbox.width * 0.7;
-        let ry = bbox.height * 0.55;
+        let ry = bbox.height * 0.6;
         if (text.length > 1) {
             rx = bbox.width * text.length * 0.55;
         }
