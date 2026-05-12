@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SmilesDrawer Braille – Prototyp</title>
+    <style>
+        @font-face {
+            font-family: 'Euro850';
+            src: url('./fonts/Euro850.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body {
+            font-family: system-ui, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 2rem;
+            color: #333;
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        .controls {
+            background: #fff;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .controls label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .controls input[type="text"] {
+            width: 100%;
+            padding: 0.5rem;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .controls .hint {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 0.4rem;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 1rem;
+        }
+
+        .card h3 {
+            margin: 0 0 0.5rem;
+            font-size: 0.95rem;
+            color: #555;
+        }
+
+        .card .smiles {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 0.75rem;
+            word-break: break-all;
+        }
+
+        .card svg {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+
+        .toggle {
+            margin-top: 0.75rem;
+        }
+
+        .toggle button {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            background: #fafafa;
+            border-radius: 4px;
+        }
+
+        .toggle button.active {
+            background: #333;
+            color: #fff;
+            border-color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>⚟️ SmilesDrawer Braille-Prototyp</h1>
+
+    <div class="controls">
+        <label for="smiles-input">SMILES-String</label>
+        <input id="smiles-input" type="text" value="CC(=O)Oc1ccccc1C(=O)O" placeholder="z. B. C1CCCCC1">
+        <p class="hint">
+            Voreingestellt: Aspirin. Drücke <kbd>Enter</kbd> oder klicke auf die Beispiele unten.
+        </p>
+    </div>
+
+    <div class="gallery">
+        <div class="card">
+            <h3>Standard (SVG, light)</h3>
+            <div class="smiles" id="smiles-label-std">CC(=O)Oc1ccccc1C(=O)O</div>
+            <svg id="output-std" width="400" height="300"></svg>
+        </div>
+
+        <div class="card">
+            <h3>Braille (Euro850, 24 pt, rein schwarz)</h3>
+            <div class="smiles" id="smiles-label-braille">CC(=O)Oc1ccccc1C(=O)O</div>
+            <svg id="output-braille" width="400" height="300"></svg>
+        </div>
+    </div>
+
+    <div class="controls" style="margin-top:1.5rem;">
+        <label>Beispiele</label>
+        <div class="toggle">
+            <button onclick="loadExample('C1CCCCC1')">Benzol</button>
+            <button onclick="loadExample('CC(=O)Oc1ccccc1C(=O)O')">Aspirin</button>
+            <button onclick="loadExample('CC(C)CC1=CC=C(C=C1)C(C)C(=O)O')">Ibuprofen</button>
+            <button onclick="loadExample('C(C1C(C(C(C(O1)O)O)O)O)O')">Glukose</button>
+            <button onclick="loadExample('C1=CC=CC=C1C2=CC=CC=C2')">Biphenyl</button>
+            <button onclick="loadExample('C1CC[C@H](C1)O')">Cyclopentanol (chiral)</button>
+        </div>
+    </div>
+
+    <!-- SmilesDrawer Bundle -->
+    <script src="./js/smiles-drawer.min.js"></script>
+
+    <script>
+        const input = document.getElementById('smiles-input');
+        const labelStd = document.getElementById('smiles-label-std');
+        const labelBraille = document.getElementById('smiles-label-braille');
+        const svgStd = document.getElementById('output-std');
+        const svgBraille = document.getElementById('output-braille');
+
+        // Standard-Drawer
+        const stdDrawer = new SmilesDrawer.SvgDrawer({
+            width: 400,
+            height: 300,
+            bondLength: 30,
+            bondThickness: 1.0,
+        });
+
+        // Braille-Drawer
+        const brailleDrawer = new SmilesDrawer.BrailleSvgDrawer({
+            width: 400,
+            height: 300,
+        });
+
+        function draw(smiles) {
+            // Standard
+            try {
+                SmilesDrawer.parse(smiles, tree => {
+                    stdDrawer.draw(tree, svgStd, 'light');
+                });
+            } catch (e) {
+                console.error('Standard-Fehler:', e);
+            }
+
+            // Braille
+            try {
+                SmilesDrawer.parse(smiles, tree => {
+                    brailleDrawer.draw(tree, svgBraille, 'braille');
+                });
+            } catch (e) {
+                console.error('Braille-Fehler:', e);
+            }
+
+            labelStd.textContent = smiles;
+            labelBraille.textContent = smiles;
+        }
+
+        function loadExample(smiles) {
+            input.value = smiles;
+            draw(smiles);
+        }
+
+        input.addEventListener('change', () => draw(input.value));
+        input.addEventListener('keyup', e => { if (e.key === 'Enter') draw(input.value); });
+
+        // Initiales Zeichnen
+        draw(input.value);
+    </script>
+</body>
+</html>
