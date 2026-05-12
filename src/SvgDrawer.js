@@ -233,7 +233,7 @@ export default class SvgDrawer {
                     line = new Line(Vector2.add(a, normals[1]), Vector2.add(b, normals[1]), elementA, elementB);
                 }
 
-                line.shorten(opts.bondLength - opts.shortBondLength * opts.bondLength);
+                line.shorten(opts.bondLength - opts.shortBondLength * opts.bondLength * 0.5);
 
                 // Set dashed to true if the edge is part of an aromatic ring:
                 svgWrapper.drawLine(line, edge.isPartOfAromaticRing, color);
@@ -257,7 +257,7 @@ export default class SvgDrawer {
 
                 let line = new Line(Vector2.add(a, normals[0]), Vector2.add(b, normals[0]), elementA, elementB);
 
-                line.shorten(opts.bondLength - opts.shortBondLength * opts.bondLength);
+                line.shorten(opts.bondLength - opts.shortBondLength * opts.bondLength * 0.5);
 
                 svgWrapper.drawLine(line, false, color);
                 svgWrapper.drawLine(new Line(a, b, elementA, elementB), false, color);
@@ -267,7 +267,7 @@ export default class SvgDrawer {
 
                 let line = new Line(Vector2.add(a, normals[1]), Vector2.add(b, normals[1]), elementA, elementB);
 
-                line.shorten(opts.bondLength - opts.shortBondLength * opts.bondLength);
+                line.shorten(opts.bondLength - opts.shortBondLength * opts.bondLength * 0.5);
                 svgWrapper.drawLine(line, false, color);
                 svgWrapper.drawLine(new Line(a, b, elementA, elementB), false, color);
             }
