@@ -187,9 +187,9 @@ export default class BrailleSvgWrapper extends SvgWrapper {
 
         // Weißer Hintergrundkreis verdeckt Bindungslinien hinter dem Text
         // (ersetzt die entfernten SVG-Masken)
-        let maskRadius = this.opts.fontSizeLarge * 0.9;
+        let maskRadius = this.opts.fontSizeLarge * 0.6;
         if (text[0][1].length > 1) {
-            maskRadius = this.opts.fontSizeLarge * 1.3;
+            maskRadius = this.opts.fontSizeLarge * 0.8;
         }
         let bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         bg.setAttributeNS(null, 'cx', 0);
