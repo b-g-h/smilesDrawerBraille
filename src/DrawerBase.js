@@ -49,7 +49,7 @@ export default class DrawerBase {
             bondThickness:               1.0,
             bondLength:                  30,
             shortBondLength:             0.8,
-            bondSpacing:                 0.17 * 30,
+            bondSpacing:                 0.2 * 30,
             atomVisualization:           'default',
             isomeric:                    true,
             debug:                       false,
