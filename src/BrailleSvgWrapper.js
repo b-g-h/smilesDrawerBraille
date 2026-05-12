@@ -187,10 +187,16 @@ export default class BrailleSvgWrapper extends SvgWrapper {
 
         // Weißer Hintergrund verdeckt Bindungslinien hinter dem Text
         // (ersetzt die entfernten SVG-Masken)
-        let rx = bbox.width * 0.7;
-        let ry = bbox.height * 0.6;
+        let rx = bbox.width * 0.75;
+        let ry = bbox.height * 0.7;
         if (text.length > 1) {
-            rx = bbox.width * text.length * 0.55;
+            if (direction === 'up' || direction === 'down') {
+                // Vertikal gestapelter Text → Höhe vergrößern
+                ry = bbox.height * (0.5 + text.length * 0.45);
+            } else {
+                // Horizontal nebeneinander → Breite vergrößern
+                rx = bbox.width * text.length * 0.6;
+            }
         }
         let bg = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
         bg.setAttributeNS(null, 'cx', 0);
