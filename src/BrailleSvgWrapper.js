@@ -185,6 +185,19 @@ export default class BrailleSvgWrapper extends SvgWrapper {
         // Inkscape-kompatibles Transform-Attribut statt CSS-Style
         g.setAttributeNS(null, 'transform', `translate(${x}, ${y})`);
 
+        // Weißer Hintergrundkreis verdeckt Bindungslinien hinter dem Text
+        // (ersetzt die entfernten SVG-Masken)
+        let maskRadius = this.opts.fontSizeLarge * 0.9;
+        if (text[0][1].length > 1) {
+            maskRadius = this.opts.fontSizeLarge * 1.3;
+        }
+        let bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        bg.setAttributeNS(null, 'cx', 0);
+        bg.setAttributeNS(null, 'cy', 0);
+        bg.setAttributeNS(null, 'r', maskRadius);
+        bg.setAttributeNS(null, 'fill', '#ffffff');
+        g.insertBefore(bg, textElem);
+
         this.vertices.push(g);
     }
 
