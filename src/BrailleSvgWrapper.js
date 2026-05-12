@@ -245,6 +245,37 @@ export default class BrailleSvgWrapper extends SvgWrapper {
     }
 
     /**
+     * Überschreibt updateViewbox():
+     *   • Keine Skalierung — width/height des SVG werden auf die natürliche
+     *     ViewBox-Größe gesetzt, damit der Text immer exakt 24 pt bleibt.
+     */
+    updateViewbox(scale) {
+        let x = this.minX;
+        let y = this.minY;
+        let width = this.maxX - this.minX;
+        let height = this.maxY - this.minY;
+
+        if (width > height) {
+            let diff = width - height;
+            height = width;
+            y -= diff / 2.0;
+        } else {
+            let diff = height - width;
+            width = height;
+            x -= diff / 2.0;
+        }
+
+        this.svg.setAttributeNS(null, 'viewBox', `${x} ${y} ${width} ${height}`);
+        // Natürliche Größe → keine Browser-Skalierung, Text bleibt 24 pt
+        this.svg.setAttributeNS(null, 'width', width);
+        this.svg.setAttributeNS(null, 'height', height);
+        if (this.svg.style) {
+            this.svg.style.width = '';
+            this.svg.style.height = '';
+        }
+    }
+
+    /**
      * Konstruiert das SVG OHNE Masken.
      * Reihenfolge: defs → background → highlights → paths → vertices
      * (vertices überdecken paths, also überdeckt der Text die Bindungslinien)
