@@ -14011,8 +14011,10 @@
       this.write(text, direction, x, y, totalVertices === 1);
     }
     /**
-     * Überschreibt write(), damit alle tspans explizit schwarz gefärbt werden
-     * (Theme-Fallback, falls der Browser irgendwo ein default-color einstreut).
+     * Überschreibt write():
+     *   • Keine Masken-Elemente (Inkscape-Kompatibilität)
+     *   • Text direkt schwarz statt weiß+schwarzer tspan
+     *   • Transform als SVG-Attribut statt CSS-Style
      */
     write(text, direction, x, y, singleVertex) {
       let bbox = SvgWrapper.measureText(text[0][1], this.opts.fontSizeLarge, this.opts.fontFamily);
@@ -14046,12 +14048,10 @@
           }
         }
       }
-      let cx = x;
-      let cy = y;
       let textElem = document.createElementNS("http://www.w3.org/2000/svg", "text");
       textElem.setAttributeNS(null, "class", "element");
+      textElem.setAttributeNS(null, "fill", "#000000");
       let g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      textElem.setAttributeNS(null, "fill", "#ffffff");
       if (direction === "left") {
         text = text.reverse();
       }
@@ -14063,9 +14063,7 @@
       }
       text.forEach((part, i) => {
         const display = part[0];
-        const elementName = part[1];
         let tspanElem = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
-        tspanElem.setAttributeNS(null, "fill", "#000000");
         tspanElem.textContent = display;
         if (direction === "up" || direction === "down") {
           tspanElem.setAttributeNS(null, "x", "0px");
@@ -14088,18 +14086,61 @@
         textElem.setAttributeNS(null, "text-anchor", "end");
       }
       g.appendChild(textElem);
-      g.setAttributeNS(null, "style", `transform: translateX(${x}px) translateY(${y}px)`);
-      let maskRadius = this.opts.fontSizeLarge * 0.75;
-      if (text[0][1].length > 1) {
-        maskRadius = this.opts.fontSizeLarge * 1.1;
+      g.setAttributeNS(null, "transform", `translate(${x}, ${y})`);
+      let rx = bbox.width * 0.9 + 2;
+      let ry = bbox.height * 0.85 + 2;
+      if (text.length > 1) {
+        if (direction === "up" || direction === "down") {
+          ry = bbox.height * (0.6 + text.length * 0.45) + 2;
+        } else {
+          rx = bbox.width * text.length * 0.7 + 2;
+        }
       }
-      let mask = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      mask.setAttributeNS(null, "cx", cx);
-      mask.setAttributeNS(null, "cy", cy);
-      mask.setAttributeNS(null, "r", maskRadius);
-      mask.setAttributeNS(null, "fill", "black");
-      this.maskElements.push(mask);
+      let bg = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+      bg.setAttributeNS(null, "cx", 0);
+      bg.setAttributeNS(null, "cy", 0);
+      bg.setAttributeNS(null, "rx", rx);
+      bg.setAttributeNS(null, "ry", ry);
+      bg.setAttributeNS(null, "fill", "#ffffff");
+      g.insertBefore(bg, textElem);
       this.vertices.push(g);
+    }
+    /**
+     * Konstruiert das SVG OHNE Masken (Inkscape kann Masken oft nicht richtig rendern).
+     * Reihenfolge: defs → background → highlights → paths → vertices
+     * (vertices überdecken paths, also überdeckt der Text die Bindungslinien)
+     */
+    constructSvg() {
+      let defs = document.createElementNS("http://www.w3.org/2000/svg", "defs"), background = document.createElementNS("http://www.w3.org/2000/svg", "g"), highlights = document.createElementNS("http://www.w3.org/2000/svg", "g"), paths = document.createElementNS("http://www.w3.org/2000/svg", "g"), vertices = document.createElementNS("http://www.w3.org/2000/svg", "g"), pathChildNodes = this.paths;
+      for (let path of pathChildNodes) {
+        paths.appendChild(path);
+      }
+      for (let backgroundItem of this.backgroundItems) {
+        background.appendChild(backgroundItem);
+      }
+      for (let highlight of this.highlights) {
+        highlights.appendChild(highlight);
+      }
+      for (let vertex of this.vertices) {
+        vertices.appendChild(vertex);
+      }
+      for (let gradient of this.gradients) {
+        defs.appendChild(gradient);
+      }
+      this.updateViewbox(this.opts.scale);
+      if (this.svg) {
+        this.svg.appendChild(defs);
+        this.svg.appendChild(background);
+        this.svg.appendChild(highlights);
+        this.svg.appendChild(paths);
+        this.svg.appendChild(vertices);
+      } else {
+        this.container.appendChild(defs);
+        this.container.appendChild(background);
+        this.container.appendChild(paths);
+        this.container.appendChild(vertices);
+        return this.container;
+      }
     }
     /**
      * Ringe schwarz zeichnen (Original nutzt themeManager.getColor('C')).
@@ -14116,7 +14157,7 @@
       this.paths.push(circleElem);
     }
     /**
-     * Punkte (implizite C-Atome) schwarz.
+     * Punkte (implizite C-Atome) schwarz – ohne Masken.
      */
     drawPoint(x, y, elementName) {
       let r = 0.75;
@@ -14124,12 +14165,6 @@
       if (x + r > this.maxX) this.maxX = x + r;
       if (y - r < this.minY) this.minY = y - r;
       if (y + r > this.maxY) this.maxY = y + r;
-      let mask = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      mask.setAttributeNS(null, "cx", x);
-      mask.setAttributeNS(null, "cy", y);
-      mask.setAttributeNS(null, "r", "1.5");
-      mask.setAttributeNS(null, "fill", "black");
-      this.maskElements.push(mask);
       let point = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       point.setAttributeNS(null, "cx", x);
       point.setAttributeNS(null, "cy", y);
@@ -14159,11 +14194,12 @@
   var BrailleSvgDrawer = class extends SvgDrawer {
     constructor(options, clear = true) {
       const brailleDefaults = {
-        fontFamily: "Euro850, Arial, sans-serif",
+        fontFamily: "'Euro850', 'Euro-850', Arial, sans-serif",
         fontSizeLarge: 24,
         fontSizeSmall: 8,
         bondThickness: 2,
         bondLength: 45,
+        bondSpacing: 12,
         padding: 20
       };
       const merged = Object.assign({}, brailleDefaults, options);
@@ -14213,7 +14249,7 @@
       this.svgWrapper.constructSvg();
       if (weights !== null) {
         this.opts.padding = optionBackup.padding;
-        this.opts.compactDrawing = optionBackup.padding;
+        this.opts.compactDrawing = optionBackup.compactDrawing;
       }
       return target;
     }
