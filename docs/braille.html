@@ -122,16 +122,7 @@
 
     <div class="gallery">
         <div class="card">
-            <h3>Standard (SVG, light)</h3>
-            <div class="smiles" id="smiles-label-std">CC(=O)Oc1ccccc1C(=O)O</div>
-            <svg id="output-std" width="400" height="300"></svg>
-            <div class="toggle" style="margin-top: 0.5rem;">
-                <button onclick="downloadSVG('output-std', 'standard.svg')" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">SVG Download</button>
-            </div>
-        </div>
-
-        <div class="card">
-            <h3>Braille (Euro85: 24 pt, rein schwarz)</h3>
+            <h3>Braille (Euro850, 24 pt, rein schwarz)</h3>
             <div class="smiles" id="smiles-label-braille">CC(=O)Oc1ccccc1C(=O)O</div>
             <svg id="output-braille" width="400" height="300"></svg>
             <div class="toggle" style="margin-top: 0.5rem;">
@@ -157,18 +148,8 @@
 
     <script>
         const input = document.getElementById('smiles-input');
-        const labelStd = document.getElementById('smiles-label-std');
         const labelBraille = document.getElementById('smiles-label-braille');
-        const svgStd = document.getElementById('output-std');
         const svgBraille = document.getElementById('output-braille');
-
-        // Standard-Drawer
-        const stdDrawer = new SmilesDrawer.SvgDrawer({
-            width: 400,
-            height: 300,
-            bondLength: 30,
-            bondThickness: 1.0,
-        });
 
         // Braille-Drawer
         const brailleDrawer = new SmilesDrawer.BrailleSvgDrawer({
@@ -177,15 +158,6 @@
         });
 
         function draw(smiles) {
-            // Standard
-            try {
-                SmilesDrawer.parse(smiles, tree => {
-                    stdDrawer.draw(tree, svgStd, 'light');
-                });
-            } catch (e) {
-                console.error('Standard-Fehler:', e);
-            }
-
             // Braille
             try {
                 SmilesDrawer.parse(smiles, tree => {
@@ -195,7 +167,6 @@
                 console.error('Braille-Fehler:', e);
             }
 
-            labelStd.textContent = smiles;
             labelBraille.textContent = smiles;
         }
 
@@ -241,6 +212,12 @@
             downloadLink.click();
             document.body.removeChild(downloadLink);
         }
+
+        function loadExample(smiles) {
+            input.value = smiles;
+            draw(smiles);
+        }
+
         input.addEventListener('keyup', e => { if (e.key === 'Enter') draw(input.value); });
 
         // Initiales Zeichnen
