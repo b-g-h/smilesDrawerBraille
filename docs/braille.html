@@ -308,7 +308,7 @@
             const offsetX = (pageWidth - drawW) / 2;
             const offsetY = (pageHeight - drawH) / 2;
 
-            await doc.svg(svgElement, {
+            await svg2pdf(svgElement, doc, {
                 x: offsetX,
                 y: offsetY,
                 width: drawW,
