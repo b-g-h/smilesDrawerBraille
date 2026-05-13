@@ -207,9 +207,15 @@
             // Braille
             try {
                 SmilesDrawer.parse(smiles, tree => {
-                    brailleDrawer.draw(tree, svgBraille, 'braille');
+                    try {
+                        brailleDrawer.draw(tree, svgBraille, 'braille');
+                    } catch (innerErr) {
+                        svgBraille.innerHTML = '<text x="10" y="20" fill="red">Render-Fehler: ' + innerErr.message + '</text>';
+                        console.error('Render-Fehler:', innerErr);
+                    }
                 });
             } catch (e) {
+                svgBraille.innerHTML = '<text x="10" y="20" fill="red">Parse-Fehler: ' + e.message + '</text>';
                 console.error('Braille-Fehler:', e);
             }
 
