@@ -168,6 +168,7 @@
             <svg id="output-braille"></svg>
             <div class="toggle" style="margin-top: 0.5rem;">
                 <button onclick="downloadSVG('output-braille', 'braille.svg')" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">SVG Download</button>
+                <button onclick="downloadPDF('output-braille', 'braille.pdf')" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; margin-left: 0.3rem;">PDF Download (A4)</button>
             </div>
             <div id="description-panel" class="description-panel" role="region" aria-live="polite" aria-label="Molekülbeschreibung">
                 <h2>Beschreibung der Struktur</h2>
@@ -191,6 +192,10 @@
 
     <!-- SmilesDrawer Bundle -->
     <script src="./js/smiles-drawer.min.js"></script>
+
+    <!-- PDF Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/svg2pdf.js@1.5.0/dist/svg2pdf.min.js"></script>
 
     <script>
         const input = document.getElementById('smiles-input');
@@ -222,7 +227,7 @@
             labelBraille.textContent = smiles;
         }
 
-        async function downloadSVG(svgId, fileName) {
+        async function getSVGWithEmbeddedFont(svgId) {
             const svg = document.getElementById(svgId);
             let svgData = new XMLSerializer().serializeToString(svg);
 
@@ -241,20 +246,23 @@
                     const fontStyle = `
                         <style>
                             @font-face {
-                               font-family: 'Euro85: 24 pt';
+                               font-family: 'Euro850';
                                src: url('data:font/truetype;base64,${fontBase64}') format('truetype');
                                 font-weight: normal;
                                 font-style: normal;
                             }
                         </style>
                     `;
-                    // Inject the style at the BEGINNING of the SVG, right after the opening <svg> tag
                     svgData = svgData.replace(/<svg[^>]*>/, (match) => match + fontStyle);
                 }
             } catch (e) {
                 console.error('Font embedding failed:', e);
             }
+            return svgData;
+        }
 
+        async function downloadSVG(svgId, fileName) {
+            const svgData = await getSVGWithEmbeddedFont(svgId);
             const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
             const svgUrl = URL.createObjectURL(svgBlob);
             const downloadLink = document.createElement('a');
@@ -263,6 +271,51 @@
             document.body.appendChild(downloadLink);
             downloadLink.click();
             document.body.removeChild(downloadLink);
+        }
+
+        async function downloadPDF(svgId, fileName) {
+            const { jsPDF } = window.jspdf;
+            const svgData = await getSVGWithEmbeddedFont(svgId);
+
+            // Parse SVG string back to element for svg2pdf
+            const parser = new DOMParser();
+            const svgDoc = parser.parseFromString(svgData, 'image/svg+xml');
+            const svgElement = svgDoc.documentElement;
+
+            // A4 page in mm
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = 210;
+            const pageHeight = 297;
+            const margin = 20;
+
+            // Determine SVG natural size from viewBox
+            const viewBox = svgElement.getAttribute('viewBox');
+            let svgW = 400, svgH = 300;
+            if (viewBox) {
+                const parts = viewBox.split(/\s+/).map(Number);
+                if (parts.length === 4) {
+                    svgW = parts[2];
+                    svgH = parts[3];
+                }
+            }
+
+            // Scale to fit page with margins, keeping aspect ratio
+            const maxW = pageWidth - 2 * margin;
+            const maxH = pageHeight - 2 * margin;
+            const scale = Math.min(maxW / svgW, maxH / svgH, 1);
+            const drawW = svgW * scale;
+            const drawH = svgH * scale;
+            const offsetX = (pageWidth - drawW) / 2;
+            const offsetY = (pageHeight - drawH) / 2;
+
+            await doc.svg(svgElement, {
+                x: offsetX,
+                y: offsetY,
+                width: drawW,
+                height: drawH
+            });
+
+            doc.save(fileName);
         }
 
         function loadExample(smiles) {
@@ -295,7 +348,6 @@
                     textEl.textContent = 'Keine Beschreibung verfügbar.';
                 }
                 panel.classList.add('visible');
-                // Screenreader-Fokus auf den Text setzen
                 textEl.focus();
             }
         }
