@@ -277,13 +277,73 @@
             const { jsPDF } = window.jspdf;
             const svg = document.getElementById(svgId);
 
+            // Aktuelles SVG analysieren
+            const viewBox = svg.getAttribute('viewBox');
+            let svgW = 400, svgH = 300;
+            if (viewBox) {
+                const parts = viewBox.split(/\s+/).map(Number);
+                if (parts.length === 4) {
+                    svgW = parts[2];
+                    svgH = parts[3];
+                }
+            }
+
             // Querformat A4
-            const doc = new jsPDF('l', 'mm', 'a4');
             const pageWidth = 297;
             const pageHeight = 210;
             const margin = 20;
+            const maxW = pageWidth - 2 * margin;
+            const maxH = pageHeight - 2 * margin;
 
-            // Euro850 direkt in jsPDF einbetten
+            // Skalierungsfaktor, damit die Struktur die Seite füllt
+            const targetScale = Math.min(maxW / svgW, maxH / svgH);
+            const scaleFactor = targetScale > 1 ? targetScale : 1;
+
+            // Temporäres SVG (unsichtbar) für den PDF-Export
+            const tempSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            tempSvg.id = 'temp-pdf-svg';
+            tempSvg.style.position = 'absolute';
+            tempSvg.style.left = '-9999px';
+            document.body.appendChild(tempSvg);
+
+            // Temporärer Drawer: Struktur skaliert, Schrift bleibt 24pt
+            const pdfDrawer = new SmilesDrawer.BrailleSvgDrawer({
+                bondLength: 45 * scaleFactor,
+                bondThickness: 2.0 * scaleFactor,
+                fontSizeLarge: 24,
+                fontSizeSmall: 16,
+                bondSpacing: 12 * scaleFactor,
+                padding: 5 * scaleFactor
+            });
+
+            let newSvgW = svgW, newSvgH = svgH;
+            try {
+                const tree = await new Promise((resolve, reject) => {
+                    try {
+                        SmilesDrawer.parse(input.value, tree => resolve(tree), err => reject(err));
+                    } catch (e) {
+                        reject(e);
+                    }
+                });
+                pdfDrawer.draw(tree, 'temp-pdf-svg', 'dark', false);
+
+                // Neue Größe aus dem temporären SVG
+                const newViewBox = tempSvg.getAttribute('viewBox');
+                if (newViewBox) {
+                    const parts = newViewBox.split(/\s+/).map(Number);
+                    if (parts.length === 4) {
+                        newSvgW = parts[2];
+                        newSvgH = parts[3];
+                    }
+                }
+            } catch (e) {
+                document.body.removeChild(tempSvg);
+                alert('Fehler beim Zeichnen für PDF: ' + e.message);
+                return;
+            }
+
+            // Euro850 in jsPDF einbetten
+            const doc = new jsPDF('l', 'mm', 'a4');
             try {
                 const fontResponse = await fetch('./fonts/Euro850.ttf');
                 if (fontResponse.ok) {
@@ -301,28 +361,16 @@
                 console.error('Font embedding failed:', e);
             }
 
-            // SVG mit eingebettetem Font für svg2pdf
-            const svgData = await getSVGWithEmbeddedFont(svgId);
+            // SVG mit eingebettetem Font serialisieren
+            const svgData = await getSVGWithEmbeddedFont('temp-pdf-svg');
             const parser = new DOMParser();
             const svgDoc = parser.parseFromString(svgData, 'image/svg+xml');
             const svgElement = svgDoc.documentElement;
 
-            // Größe aus viewBox
-            const viewBox = svgElement.getAttribute('viewBox');
-            let svgW = 400, svgH = 300;
-            if (viewBox) {
-                const parts = viewBox.split(/\s+/).map(Number);
-                if (parts.length === 4) {
-                    svgW = parts[2];
-                    svgH = parts[3];
-                }
-            }
-
-            const maxW = pageWidth - 2 * margin;
-            const maxH = pageHeight - 2 * margin;
-            const scale = Math.min(maxW / svgW, maxH / svgH, 1);
-            const drawW = svgW * scale;
-            const drawH = svgH * scale;
+            // Finale Skalierung (sollte ~1 sein, da wir bondLength angepasst haben)
+            const finalScale = Math.min(maxW / newSvgW, maxH / newSvgH, 1);
+            const drawW = newSvgW * finalScale;
+            const drawH = newSvgH * finalScale;
             const offsetX = (pageWidth - drawW) / 2;
             const offsetY = (pageHeight - drawH) / 2;
 
@@ -334,6 +382,9 @@
             });
 
             doc.save(fileName);
+
+            // Aufräumen
+            document.body.removeChild(tempSvg);
         }
 
         function loadExample(smiles) {
