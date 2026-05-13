@@ -307,35 +307,47 @@
             const pageHeight = 210;
             const margin = 20;
 
-            // Natürliche SVG-Größe in px aus viewBox
+            // viewBox normalisieren: x/y auf 0 setzen, alle Elemente verschieben
             const vb = svgElement.getAttribute('viewBox');
             let svgW_px = 400, svgH_px = 300;
+            let vbX = 0, vbY = 0;
             if (vb) {
                 const parts = vb.split(/\s+/).map(Number);
                 if (parts.length === 4) {
+                    vbX = parts[0];
+                    vbY = parts[1];
                     svgW_px = parts[2];
                     svgH_px = parts[3];
+
+                    // Wenn x oder y nicht 0 sind, alle Elemente verschieben
+                    if (vbX !== 0 || vbY !== 0) {
+                        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                        g.setAttribute('transform', `translate(${-vbX}, ${-vbY})`);
+                        while (svgElement.firstChild) {
+                            g.appendChild(svgElement.firstChild);
+                        }
+                        svgElement.appendChild(g);
+                    }
+
+                    svgElement.setAttribute('viewBox', `0 0 ${svgW_px} ${svgH_px}`);
                 }
             }
+
+            // width/height setzen (in px)
+            svgElement.setAttribute('width', svgW_px);
+            svgElement.setAttribute('height', svgH_px);
 
             // In mm umrechnen (96 DPI)
             const pxToMm = 25.4 / 96;
             let svgW_mm = svgW_px * pxToMm;
             let svgH_mm = svgH_px * pxToMm;
 
-            // Skalierung für die Seite (mit zusätzlichem Puffer von 10mm)
-            const maxW = pageWidth - 2 * margin - 10;
-            const maxH = pageHeight - 2 * margin - 10;
-            let scale = Math.min(maxW / svgW_mm, maxH / svgH_mm);
-            if (scale > 1) scale = 1; // Nie vergrößern
-
-            // WICHTIG: width/height Attribute auf natürliche Größe setzen (in px)
-            // damit svg2pdf die viewBox korrekt interpretiert
-            svgElement.setAttribute('width', svgW_px);
-            svgElement.setAttribute('height', svgH_px);
+            // Skalierung für die Seite
+            const maxW = pageWidth - 2 * margin;
+            const maxH = pageHeight - 2 * margin;
+            let scale = Math.min(maxW / svgW_mm, maxH / svgH_mm, 1);
 
             // Font-Size korrigieren: svg2pdf skaliert ALLES mit dem Faktor 'scale'.
-            // Damit die Schrift im PDF bei 24pt bleibt, teilen wir sie vorher durch scale.
             const texts = svgElement.querySelectorAll('text');
             texts.forEach(t => {
                 const fs = t.getAttribute('font-size');
@@ -346,6 +358,7 @@
                     t.setAttribute('font-size', corrected + unit);
                 }
             });
+
             // Auch in <style> eingebettete font-size korrigieren
             const styles = svgElement.querySelectorAll('style');
             styles.forEach(s => {
@@ -356,7 +369,7 @@
                 }
             });
 
-            // Weiße Hintergrund-Rechtecke korrigieren (werden sonst hochskaliert, aber Schrift nicht)
+            // Weiße Hintergrund-Rechtecke korrigieren
             const rects = svgElement.querySelectorAll('rect');
             rects.forEach(r => {
                 ['x', 'y', 'width', 'height', 'rx', 'ry'].forEach(attr => {
