@@ -307,29 +307,62 @@
             const pageHeight = 210;
             const margin = 20;
 
-            // Natürliche SVG-Größe in mm (96 DPI: 1px = 25.4/96 mm)
+            // Natürliche SVG-Größe in px aus viewBox (width/height Attribute entfernen, damit svg2pdf nicht selbst skaliert)
+            const vb = svgElement.getAttribute('viewBox');
+            let svgW_px = 400, svgH_px = 300;
+            if (vb) {
+                const parts = vb.split(/\s+/).map(Number);
+                if (parts.length === 4) {
+                    svgW_px = parts[2];
+                    svgH_px = parts[3];
+                }
+            }
+            // Fallback auf width/height Attribute falls viewBox fehlt
+            if (svgElement.hasAttribute('width')) {
+                svgW_px = parseFloat(svgElement.getAttribute('width'));
+            }
+            if (svgElement.hasAttribute('height')) {
+                svgH_px = parseFloat(svgElement.getAttribute('height'));
+            }
+
+            // In mm umrechnen (96 DPI)
             const pxToMm = 25.4 / 96;
-            let svgW = parseFloat(svgElement.getAttribute('width') || svgElement.viewBox.baseVal.width) * pxToMm;
-            let svgH = parseFloat(svgElement.getAttribute('height') || svgElement.viewBox.baseVal.height) * pxToMm;
+            let svgW_mm = svgW_px * pxToMm;
+            let svgH_mm = svgH_px * pxToMm;
 
             // Skalierung nur wenn nötig (zu groß für Seite)
             const maxW = pageWidth - 2 * margin;
             const maxH = pageHeight - 2 * margin;
-            let scale = Math.min(maxW / svgW, maxH / svgH, 1);
-            let drawW = svgW * scale;
-            let drawH = svgH * scale;
-            let offsetX = (pageWidth - drawW) / 2;
-            let offsetY = (pageHeight - drawH) / 2;
+            let scale = Math.min(maxW / svgW_mm, maxH / svgH_mm, 1);
 
-            // Ohne width/height → natürliche Größe, Schrift bleibt 24pt
-            // Mit width/height → skaliert auf Seite, aber nur runter, nie hoch
-            const options = { x: offsetX, y: offsetY };
-            if (scale < 1) {
-                options.width = drawW;
-                options.height = drawH;
-            }
+            // WICHTIG: width/height Attribute entfernen, damit svg2pdf viewBox verwendet
+            // und NICHT selbst skaliert
+            svgElement.removeAttribute('width');
+            svgElement.removeAttribute('height');
 
-            await svg2pdf(svgElement, doc, options);
+            // Schriftgröße für svg2pdf anpassen (pt → px, da svg2pdf pt anders interpretiert)
+            const texts = svgElement.querySelectorAll('text');
+            texts.forEach(t => {
+                const fs = t.getAttribute('font-size');
+                if (fs && fs.includes('pt')) {
+                    const pt = parseFloat(fs);
+                    // 1pt = 1.333px (96 DPI). svg2pdf rechnet intern mit px, daher pt → px
+                    const px = Math.round(pt * 4 / 3);
+                    t.setAttribute('font-size', px + 'px');
+                }
+            });
+
+            let drawW_mm = svgW_mm * scale;
+            let drawH_mm = svgH_mm * scale;
+            let offsetX = (pageWidth - drawW_mm) / 2;
+            let offsetY = (pageHeight - drawH_mm) / 2;
+
+            await svg2pdf(svgElement, doc, {
+                x: offsetX,
+                y: offsetY,
+                width: drawW_mm,
+                height: drawH_mm
+            });
             doc.save(fileName);
         }
 
