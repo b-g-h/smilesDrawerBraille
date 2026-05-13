@@ -275,20 +275,39 @@
 
         async function downloadPDF(svgId, fileName) {
             const { jsPDF } = window.jspdf;
-            const svgData = await getSVGWithEmbeddedFont(svgId);
+            const svg = document.getElementById(svgId);
 
-            // Parse SVG string back to element for svg2pdf
+            // Querformat A4
+            const doc = new jsPDF('l', 'mm', 'a4');
+            const pageWidth = 297;
+            const pageHeight = 210;
+            const margin = 20;
+
+            // Euro850 direkt in jsPDF einbetten
+            try {
+                const fontResponse = await fetch('./fonts/Euro850.ttf');
+                if (fontResponse.ok) {
+                    const fontBlob = await fontResponse.blob();
+                    const fontBase64 = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                        reader.readAsDataURL(fontBlob);
+                    });
+                    doc.addFileToVFS('Euro850.ttf', fontBase64);
+                    doc.addFont('Euro850.ttf', 'Euro850', 'normal');
+                    doc.setFont('Euro850');
+                }
+            } catch (e) {
+                console.error('Font embedding failed:', e);
+            }
+
+            // SVG mit eingebettetem Font für svg2pdf
+            const svgData = await getSVGWithEmbeddedFont(svgId);
             const parser = new DOMParser();
             const svgDoc = parser.parseFromString(svgData, 'image/svg+xml');
             const svgElement = svgDoc.documentElement;
 
-            // A4 page in mm
-            const doc = new jsPDF('p', 'mm', 'a4');
-            const pageWidth = 210;
-            const pageHeight = 297;
-            const margin = 20;
-
-            // Determine SVG natural size from viewBox
+            // Größe aus viewBox
             const viewBox = svgElement.getAttribute('viewBox');
             let svgW = 400, svgH = 300;
             if (viewBox) {
@@ -299,7 +318,6 @@
                 }
             }
 
-            // Scale to fit page with margins, keeping aspect ratio
             const maxW = pageWidth - 2 * margin;
             const maxH = pageHeight - 2 * margin;
             const scale = Math.min(maxW / svgW, maxH / svgH, 1);
