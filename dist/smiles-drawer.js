@@ -14051,6 +14051,8 @@
       let textElem = document.createElementNS("http://www.w3.org/2000/svg", "text");
       textElem.setAttributeNS(null, "class", "element");
       textElem.setAttributeNS(null, "fill", "#000000");
+      textElem.setAttributeNS(null, "font-family", "Euro850");
+      textElem.setAttributeNS(null, "font-size", this.opts.fontSizeLarge + "pt");
       let g = document.createElementNS("http://www.w3.org/2000/svg", "g");
       if (direction === "left") {
         text = text.reverse();

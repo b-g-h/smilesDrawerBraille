@@ -139,6 +139,9 @@ export default class BrailleSvgWrapper extends SvgWrapper {
         textElem.setAttributeNS(null, 'class', 'element');
         // Direkt schwarz – kein weißer Text mehr
         textElem.setAttributeNS(null, 'fill', '#000000');
+        // Font-Attribute explizit setzen (svg2pdf liest keine CSS-Klassen)
+        textElem.setAttributeNS(null, 'font-family', 'Euro850');
+        textElem.setAttributeNS(null, 'font-size', this.opts.fontSizeLarge + 'pt');
         let g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
 
         if (direction === 'left') {
