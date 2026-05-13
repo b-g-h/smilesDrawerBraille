@@ -152,6 +152,8 @@ export default class BrailleSvgWrapper extends SvgWrapper {
             x += bbox.width / 2.0;
         }
 
+        let firstDisplay = text[0][0];
+
         text.forEach((part, i) => {
             const display = part[0];
             let tspanElem = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
@@ -242,7 +244,7 @@ export default class BrailleSvgWrapper extends SvgWrapper {
         g.insertBefore(bg, textElem);
 
         g.setAttributeNS(null, 'role', 'group');
-        g.setAttributeNS(null, 'aria-label', display + ' Atom');
+        g.setAttributeNS(null, 'aria-label', firstDisplay + ' Atom');
 
         this.vertices.push(g);
     }

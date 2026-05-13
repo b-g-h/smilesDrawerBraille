@@ -10958,14 +10958,14 @@
      */
     drawText(x, y, elementName, hydrogens, direction, isTerminal, charge, isotope, totalVertices, attachedPseudoElement = {}) {
       let text = [];
-      let display2 = elementName;
+      let display = elementName;
       if (charge !== 0 && charge !== null) {
-        display2 += _SvgWrapper.createUnicodeCharge(charge);
+        display += _SvgWrapper.createUnicodeCharge(charge);
       }
       if (isotope !== 0 && isotope !== null) {
-        display2 = _SvgWrapper.createUnicodeSuperscript(isotope) + display2;
+        display = _SvgWrapper.createUnicodeSuperscript(isotope) + display;
       }
-      text.push([display2, elementName]);
+      text.push([display, elementName]);
       if (hydrogens === 1) {
         text.push(["H", "H"]);
       } else if (hydrogens > 1) {
@@ -11091,11 +11091,11 @@
         x += bbox.width / 2;
       }
       text.forEach((part, i) => {
-        const display2 = part[0];
+        const display = part[0];
         const elementName = part[1];
         let tspanElem = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
         tspanElem.setAttributeNS(null, "fill", this.themeManager.getColor(elementName));
-        tspanElem.textContent = display2;
+        tspanElem.textContent = display;
         if (direction === "up" || direction === "down") {
           tspanElem.setAttributeNS(null, "x", "0px");
           if (direction === "up") {
@@ -13967,17 +13967,17 @@
      */
     drawText(x, y, elementName, hydrogens, direction, isTerminal, charge, isotope, totalVertices, attachedPseudoElement = {}) {
       let text = [];
-      let display2 = elementName;
+      let display = elementName;
       if (charge !== 0 && charge !== null) {
-        if (charge === 1) display2 += "+";
-        else if (charge === -1) display2 += "-";
-        else if (charge > 1) display2 += "+" + charge;
-        else display2 += charge;
+        if (charge === 1) display += "+";
+        else if (charge === -1) display += "-";
+        else if (charge > 1) display += "+" + charge;
+        else display += charge;
       }
       if (isotope !== 0 && isotope !== null) {
-        display2 = isotope + display2;
+        display = isotope + display;
       }
-      text.push([display2, elementName]);
+      text.push([display, elementName]);
       if (hydrogens === 1) {
         text.push(["H", "H"]);
       } else if (hydrogens > 1) {
@@ -14061,10 +14061,11 @@
       if (direction === "left") {
         x += bbox.width / 2;
       }
+      let firstDisplay = text[0][0];
       text.forEach((part, i) => {
-        const display2 = part[0];
+        const display = part[0];
         let tspanElem = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
-        tspanElem.textContent = display2;
+        tspanElem.textContent = display;
         if (direction === "up" || direction === "down") {
           tspanElem.setAttributeNS(null, "x", "0px");
           if (direction === "up") {
@@ -14127,7 +14128,7 @@
       bg.setAttributeNS(null, "fill", "#ffffff");
       g.insertBefore(bg, textElem);
       g.setAttributeNS(null, "role", "group");
-      g.setAttributeNS(null, "aria-label", display + " Atom");
+      g.setAttributeNS(null, "aria-label", firstDisplay + " Atom");
       this.vertices.push(g);
     }
     /**
