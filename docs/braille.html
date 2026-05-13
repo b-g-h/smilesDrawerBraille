@@ -307,7 +307,7 @@
             const pageHeight = 210;
             const margin = 20;
 
-            // Natürliche SVG-Größe in px aus viewBox (width/height Attribute entfernen, damit svg2pdf nicht selbst skaliert)
+            // Natürliche SVG-Größe in px aus viewBox
             const vb = svgElement.getAttribute('viewBox');
             let svgW_px = 400, svgH_px = 300;
             if (vb) {
@@ -330,25 +330,34 @@
             let svgW_mm = svgW_px * pxToMm;
             let svgH_mm = svgH_px * pxToMm;
 
-            // Skalierung nur wenn nötig (zu groß für Seite)
+            // Skalierung für die Seite (kann >1 sein für Vergrößerung)
             const maxW = pageWidth - 2 * margin;
             const maxH = pageHeight - 2 * margin;
-            let scale = Math.min(maxW / svgW_mm, maxH / svgH_mm, 1);
+            let scale = Math.min(maxW / svgW_mm, maxH / svgH_mm);
 
             // WICHTIG: width/height Attribute entfernen, damit svg2pdf viewBox verwendet
-            // und NICHT selbst skaliert
             svgElement.removeAttribute('width');
             svgElement.removeAttribute('height');
 
-            // Schriftgröße für svg2pdf anpassen (pt → px, da svg2pdf pt anders interpretiert)
+            // Font-Size korrigieren: svg2pdf skaliert ALLES mit dem Faktor 'scale'.
+            // Damit die Schrift im PDF bei 24pt bleibt, teilen wir sie vorher durch scale.
             const texts = svgElement.querySelectorAll('text');
             texts.forEach(t => {
                 const fs = t.getAttribute('font-size');
-                if (fs && fs.includes('pt')) {
-                    const pt = parseFloat(fs);
-                    // 1pt = 1.333px (96 DPI). svg2pdf rechnet intern mit px, daher pt → px
-                    const px = Math.round(pt * 4 / 3);
-                    t.setAttribute('font-size', px + 'px');
+                if (fs) {
+                    const val = parseFloat(fs);
+                    const unit = fs.replace(/[0-9.]/g, '');
+                    const corrected = val / scale;
+                    t.setAttribute('font-size', corrected + unit);
+                }
+            });
+            // Auch in <style> eingebettete font-size korrigieren
+            const styles = svgElement.querySelectorAll('style');
+            styles.forEach(s => {
+                if (s.textContent) {
+                    s.textContent = s.textContent.replace(/font-size:\s*([0-9.]+)(pt|px|em)/g, (match, val, unit) => {
+                        return 'font-size:' + (parseFloat(val) / scale) + unit;
+                    });
                 }
             });
 
