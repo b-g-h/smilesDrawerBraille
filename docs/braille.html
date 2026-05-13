@@ -317,27 +317,22 @@
                     svgH_px = parts[3];
                 }
             }
-            // Fallback auf width/height Attribute falls viewBox fehlt
-            if (svgElement.hasAttribute('width')) {
-                svgW_px = parseFloat(svgElement.getAttribute('width'));
-            }
-            if (svgElement.hasAttribute('height')) {
-                svgH_px = parseFloat(svgElement.getAttribute('height'));
-            }
 
             // In mm umrechnen (96 DPI)
             const pxToMm = 25.4 / 96;
             let svgW_mm = svgW_px * pxToMm;
             let svgH_mm = svgH_px * pxToMm;
 
-            // Skalierung für die Seite (kann >1 sein für Vergrößerung)
-            const maxW = pageWidth - 2 * margin;
-            const maxH = pageHeight - 2 * margin;
+            // Skalierung für die Seite (mit zusätzlichem Puffer von 10mm)
+            const maxW = pageWidth - 2 * margin - 10;
+            const maxH = pageHeight - 2 * margin - 10;
             let scale = Math.min(maxW / svgW_mm, maxH / svgH_mm);
+            if (scale > 1) scale = 1; // Nie vergrößern
 
-            // WICHTIG: width/height Attribute entfernen, damit svg2pdf viewBox verwendet
-            svgElement.removeAttribute('width');
-            svgElement.removeAttribute('height');
+            // WICHTIG: width/height Attribute auf natürliche Größe setzen (in px)
+            // damit svg2pdf die viewBox korrekt interpretiert
+            svgElement.setAttribute('width', svgW_px);
+            svgElement.setAttribute('height', svgH_px);
 
             // Font-Size korrigieren: svg2pdf skaliert ALLES mit dem Faktor 'scale'.
             // Damit die Schrift im PDF bei 24pt bleibt, teilen wir sie vorher durch scale.
