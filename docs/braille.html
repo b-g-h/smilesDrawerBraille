@@ -361,6 +361,17 @@
                 }
             });
 
+            // Weiße Hintergrund-Rechtecke korrigieren (werden sonst hochskaliert, aber Schrift nicht)
+            const rects = svgElement.querySelectorAll('rect');
+            rects.forEach(r => {
+                ['x', 'y', 'width', 'height', 'rx', 'ry'].forEach(attr => {
+                    const val = r.getAttribute(attr);
+                    if (val && !isNaN(parseFloat(val))) {
+                        r.setAttribute(attr, parseFloat(val) / scale);
+                    }
+                });
+            });
+
             let drawW_mm = svgW_mm * scale;
             let drawH_mm = svgH_mm * scale;
             let offsetX = (pageWidth - drawW_mm) / 2;
