@@ -241,6 +241,9 @@ export default class BrailleSvgWrapper extends SvgWrapper {
         bg.setAttributeNS(null, 'fill', '#ffffff');
         g.insertBefore(bg, textElem);
 
+        g.setAttributeNS(null, 'role', 'group');
+        g.setAttributeNS(null, 'aria-label', display + ' Atom');
+
         this.vertices.push(g);
     }
 
@@ -304,6 +307,11 @@ export default class BrailleSvgWrapper extends SvgWrapper {
         for (let gradient of this.gradients) {
             defs.appendChild(gradient);
         }
+
+        paths.setAttributeNS(null, 'role', 'group');
+        paths.setAttributeNS(null, 'aria-label', 'Bindungen');
+        vertices.setAttributeNS(null, 'role', 'group');
+        vertices.setAttributeNS(null, 'aria-label', 'Atome und Elemente');
 
         this.updateViewbox(this.opts.scale);
 

@@ -10958,14 +10958,14 @@
      */
     drawText(x, y, elementName, hydrogens, direction, isTerminal, charge, isotope, totalVertices, attachedPseudoElement = {}) {
       let text = [];
-      let display = elementName;
+      let display2 = elementName;
       if (charge !== 0 && charge !== null) {
-        display += _SvgWrapper.createUnicodeCharge(charge);
+        display2 += _SvgWrapper.createUnicodeCharge(charge);
       }
       if (isotope !== 0 && isotope !== null) {
-        display = _SvgWrapper.createUnicodeSuperscript(isotope) + display;
+        display2 = _SvgWrapper.createUnicodeSuperscript(isotope) + display2;
       }
-      text.push([display, elementName]);
+      text.push([display2, elementName]);
       if (hydrogens === 1) {
         text.push(["H", "H"]);
       } else if (hydrogens > 1) {
@@ -11091,11 +11091,11 @@
         x += bbox.width / 2;
       }
       text.forEach((part, i) => {
-        const display = part[0];
+        const display2 = part[0];
         const elementName = part[1];
         let tspanElem = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
         tspanElem.setAttributeNS(null, "fill", this.themeManager.getColor(elementName));
-        tspanElem.textContent = display;
+        tspanElem.textContent = display2;
         if (direction === "up" || direction === "down") {
           tspanElem.setAttributeNS(null, "x", "0px");
           if (direction === "up") {
@@ -13967,17 +13967,17 @@
      */
     drawText(x, y, elementName, hydrogens, direction, isTerminal, charge, isotope, totalVertices, attachedPseudoElement = {}) {
       let text = [];
-      let display = elementName;
+      let display2 = elementName;
       if (charge !== 0 && charge !== null) {
-        if (charge === 1) display += "+";
-        else if (charge === -1) display += "-";
-        else if (charge > 1) display += "+" + charge;
-        else display += charge;
+        if (charge === 1) display2 += "+";
+        else if (charge === -1) display2 += "-";
+        else if (charge > 1) display2 += "+" + charge;
+        else display2 += charge;
       }
       if (isotope !== 0 && isotope !== null) {
-        display = isotope + display;
+        display2 = isotope + display2;
       }
-      text.push([display, elementName]);
+      text.push([display2, elementName]);
       if (hydrogens === 1) {
         text.push(["H", "H"]);
       } else if (hydrogens > 1) {
@@ -14062,9 +14062,9 @@
         x += bbox.width / 2;
       }
       text.forEach((part, i) => {
-        const display = part[0];
+        const display2 = part[0];
         let tspanElem = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
-        tspanElem.textContent = display;
+        tspanElem.textContent = display2;
         if (direction === "up" || direction === "down") {
           tspanElem.setAttributeNS(null, "x", "0px");
           if (direction === "up") {
@@ -14126,6 +14126,8 @@
       bg.setAttributeNS(null, "ry", 4);
       bg.setAttributeNS(null, "fill", "#ffffff");
       g.insertBefore(bg, textElem);
+      g.setAttributeNS(null, "role", "group");
+      g.setAttributeNS(null, "aria-label", display + " Atom");
       this.vertices.push(g);
     }
     /**
@@ -14177,6 +14179,10 @@
       for (let gradient of this.gradients) {
         defs.appendChild(gradient);
       }
+      paths.setAttributeNS(null, "role", "group");
+      paths.setAttributeNS(null, "aria-label", "Bindungen");
+      vertices.setAttributeNS(null, "role", "group");
+      vertices.setAttributeNS(null, "aria-label", "Atome und Elemente");
       this.updateViewbox(this.opts.scale);
       if (this.svg) {
         this.svg.appendChild(defs);
@@ -14240,6 +14246,186 @@
     }
   };
 
+  // src/DescriptionGenerator.js
+  var DescriptionGenerator = class {
+    /**
+     * @param {Graph} graph
+     * @param {Ring[]} rings
+     * @param {Edge[]} edges
+     * @param {String} smiles
+     */
+    constructor(graph, rings, edges, smiles) {
+      this.graph = graph;
+      this.rings = rings || [];
+      this.edges = edges || [];
+      this.smiles = smiles || "";
+    }
+    /**
+     * Hauptmethode – liefert einen deutschen Beschreibungstext.
+     * @returns {String}
+     */
+    generate() {
+      const parts = [];
+      parts.push(this._describeComposition());
+      parts.push(this._describeRings());
+      parts.push(this._describeFunctionalGroups());
+      parts.push(this._describeBonds());
+      parts.push(this._describeStereo());
+      return parts.filter((p) => p).join(" ");
+    }
+    _describeComposition() {
+      const vertices = this.graph.vertices;
+      const total = vertices.length;
+      if (total === 0) return "";
+      const elements = {};
+      for (const v of vertices) {
+        const el = v.value.element;
+        elements[el] = (elements[el] || 0) + 1;
+      }
+      const elementList = Object.entries(elements).sort((a, b) => b[1] - a[1]).map(([el, count]) => {
+        const name = this._elementName(el);
+        return count === 1 ? `ein ${name}` : `${count} ${name}`;
+      });
+      let text = `Das Molek\xFCl besteht aus insgesamt ${total} Atom${total !== 1 ? "en" : ""}`;
+      if (elementList.length > 0) {
+        text += `: ${this._joinList(elementList)}`;
+      }
+      text += ".";
+      return text;
+    }
+    _describeRings() {
+      if (this.rings.length === 0) return "";
+      const ringDescs = this.rings.map((ring) => {
+        const size = ring.members.length;
+        const isAromatic = ring.isBenzeneLike ? ring.isBenzeneLike(this.graph.vertices) : false;
+        const isBridged = ring.isBridged;
+        const isFused = ring.isFused;
+        const isSpiro = ring.isSpiro;
+        let type = isAromatic ? "aromatischer" : "aliphatischer";
+        let shape = "";
+        if (size === 3) shape = "Dreiring";
+        else if (size === 4) shape = "Vierring";
+        else if (size === 5) shape = "F\xFCnfring";
+        else if (size === 6) shape = "Sechsring";
+        else if (size === 7) shape = "Siebenring";
+        else shape = `${size}er-Ring`;
+        let desc = `${type} ${shape}`;
+        const ringElements = {};
+        for (const vid of ring.members) {
+          const el = this.graph.vertices[vid].value.element;
+          if (el !== "C") ringElements[el] = (ringElements[el] || 0) + 1;
+        }
+        const heteroList = Object.entries(ringElements).map(([el, count]) => {
+          return count === 1 ? this._elementName(el) : `${count} ${this._elementName(el)}`;
+        });
+        if (heteroList.length > 0) {
+          desc += ` mit ${this._joinList(heteroList)}`;
+        }
+        if (isBridged) desc += ", verbr\xFCckt";
+        if (isFused) desc += ", anelliert";
+        if (isSpiro) desc += ", spiro-verkn\xFCpft";
+        return desc;
+      });
+      return `Es enth\xE4lt ${this.rings.length} Ring${this.rings.length !== 1 ? "e" : ""}: ${this._joinList(ringDescs)}.`;
+    }
+    _describeFunctionalGroups() {
+      const groups = [];
+      if (this._hasGroup("C(=O)O")) groups.push("eine Carboxylgruppe");
+      else if (this._hasGroup("C(=O)")) groups.push("eine Carbonylgruppe");
+      if (this._hasGroup("O", true)) {
+        const ohCount = this._countOHGroups();
+        if (ohCount === 1) groups.push("eine Hydroxylgruppe");
+        else if (ohCount > 1) groups.push(`${ohCount} Hydroxylgruppen`);
+      }
+      if (this._hasGroup("N", true)) {
+        const nCount = this._countNitrogenGroups();
+        if (nCount === 1) groups.push("ein Stickstoffatom in einer funktionellen Gruppe");
+        else if (nCount > 1) groups.push(`${nCount} Stickstoffatome in funktionellen Gruppen`);
+      }
+      if (this._hasEther()) groups.push("eine Etherbindung");
+      if (groups.length === 0) return "";
+      return `Funktionelle Gruppen: ${this._joinList(groups)}.`;
+    }
+    _describeBonds() {
+      let single = 0, double = 0, triple = 0, aromatic = 0;
+      for (const edge of this.edges) {
+        if (edge.bondType === "=") double++;
+        else if (edge.bondType === "#") triple++;
+        else if (edge.isPartOfAromaticRing) aromatic++;
+        else single++;
+      }
+      const parts = [];
+      if (double > 0) parts.push(`${double} Doppelbindung${double !== 1 ? "en" : ""}`);
+      if (triple > 0) parts.push(`${triple} Dreifachbindung${triple !== 1 ? "en" : ""}`);
+      if (aromatic > 0) parts.push(`${aromatic} aromatische Bindung${aromatic !== 1 ? "en" : ""}`);
+      if (parts.length === 0) return "";
+      return `Bindungsverh\xE4ltnisse: ${this._joinList(parts)}.`;
+    }
+    _describeStereo() {
+      const stereoCenters = this.graph.vertices.filter((v) => v.value.isStereoCenter);
+      if (stereoCenters.length === 0) return "";
+      return `${stereoCenters.length} chirales Zentrum erkannt.`;
+    }
+    _elementName(symbol) {
+      const names = {
+        "C": "Kohlenstoffatom",
+        "H": "Wasserstoffatom",
+        "N": "Stickstoffatom",
+        "O": "Sauerstoffatom",
+        "S": "Schwefelatom",
+        "P": "Phosphoratom",
+        "F": "Fluoratom",
+        "Cl": "Chloratom",
+        "Br": "Bromatom",
+        "I": "Iodatom",
+        "B": "Boratom",
+        "Si": "Siliciumatom"
+      };
+      return names[symbol] || `${symbol}-Atom`;
+    }
+    _joinList(items) {
+      if (items.length === 1) return items[0];
+      return items.slice(0, -1).join(", ") + " und " + items[items.length - 1];
+    }
+    _hasGroup(signature, checkHetero = false) {
+      if (checkHetero) {
+        return this.graph.vertices.some((v) => v.value.element === signature);
+      }
+      return this.smiles.includes(signature);
+    }
+    _countOHGroups() {
+      let count = 0;
+      for (const v of this.graph.vertices) {
+        if (v.value.element === "O") {
+          const neighbours = v.neighbours.map((nid) => this.graph.vertices[nid]);
+          const hasH = neighbours.some((n) => n.value.element === "H");
+          const hasC = neighbours.some((n) => n.value.element === "C");
+          if ((hasH || neighbours.length === 1) && hasC) count++;
+        }
+      }
+      return count;
+    }
+    _countNitrogenGroups() {
+      let count = 0;
+      for (const v of this.graph.vertices) {
+        if (v.value.element === "N" && v.neighbours.length > 1) {
+          count++;
+        }
+      }
+      return count;
+    }
+    _hasEther() {
+      for (const v of this.graph.vertices) {
+        if (v.value.element === "O") {
+          const neighbours = v.neighbours.map((nid) => this.graph.vertices[nid]);
+          const carbonCount = neighbours.filter((n) => n.value.element === "C").length;
+          if (carbonCount >= 2) return true;
+        }
+      }
+      return false;
+    }
+  };
+
   // src/BrailleSvgDrawer.js
   var BrailleSvgDrawer = class extends SvgDrawer {
     constructor(options, clear = true) {
@@ -14296,6 +14482,39 @@
           ringConnections: preprocessor.ringConnections
         });
       }
+      if (!infoOnly && target instanceof SVGElement) {
+        let oldTitle = target.querySelector("title");
+        let oldDesc = target.querySelector("desc");
+        if (oldTitle) oldTitle.remove();
+        if (oldDesc) oldDesc.remove();
+        let title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+        title.textContent = data.smiles || "Chemische Struktur";
+        target.prepend(title);
+        let desc = document.createElementNS("http://www.w3.org/2000/svg", "desc");
+        let vertexCount = preprocessor.graph.vertices.length;
+        let heteroAtoms = preprocessor.graph.vertices.map((v) => v.value.element).filter((e) => e !== "C" && e !== "H");
+        let uniqueHetero = [...new Set(heteroAtoms)];
+        let descText = `Molek\xFCl mit ${vertexCount} Atomen.`;
+        if (uniqueHetero.length > 0) {
+          descText += ` Enth\xE4lt: ${uniqueHetero.join(", ")}.`;
+        }
+        try {
+          const generator = new DescriptionGenerator(
+            preprocessor.graph,
+            preprocessor.rings,
+            preprocessor.graph.edges,
+            data.smiles || ""
+          );
+          const naturalDesc = generator.generate();
+          if (naturalDesc) {
+            descText += " " + naturalDesc;
+          }
+        } catch (e) {
+        }
+        desc.textContent = descText;
+        target.prepend(desc);
+        target.setAttribute("role", "img");
+      }
       this.svgWrapper.constructSvg();
       if (weights !== null) {
         this.opts.padding = optionBackup.padding;
@@ -14315,7 +14534,8 @@
     ReactionParser,
     SmiDrawer: SmilesDrawer,
     SvgDrawer,
-    BrailleSvgDrawer
+    BrailleSvgDrawer,
+    DescriptionGenerator
   };
   SmilesDrawerNS.clean = function(smiles) {
     return smiles.replace(/[^A-Za-z0-9@.+\-?!()[\]{}/\\=#$:*]/g, "");

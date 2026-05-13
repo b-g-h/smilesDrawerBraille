@@ -2,6 +2,7 @@
 import SvgDrawer from './SvgDrawer';
 import BrailleSvgWrapper from './BrailleSvgWrapper';
 import ThemeManager from './ThemeManager';
+import DescriptionGenerator from './DescriptionGenerator';
 
 /**
  * BrailleSvgDrawer — erweitert SvgDrawer für taktile Braille-Darstellung.
@@ -77,6 +78,50 @@ export default class BrailleSvgDrawer extends SvgDrawer {
                 rings: preprocessor.rings,
                 ringConnections: preprocessor.ringConnections,
             });
+        }
+
+        // Barrierefreiheit: Titel und Beschreibung am SVG-Root
+        if (!infoOnly && target instanceof SVGElement) {
+            let oldTitle = target.querySelector('title');
+            let oldDesc = target.querySelector('desc');
+            if (oldTitle) oldTitle.remove();
+            if (oldDesc) oldDesc.remove();
+
+            let title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+            title.textContent = data.smiles || 'Chemische Struktur';
+            target.prepend(title);
+
+            let desc = document.createElementNS('http://www.w3.org/2000/svg', 'desc');
+            let vertexCount = preprocessor.graph.vertices.length;
+            let heteroAtoms = preprocessor.graph.vertices
+                .map(v => v.value.element)
+                .filter(e => e !== 'C' && e !== 'H');
+            let uniqueHetero = [...new Set(heteroAtoms)];
+            let descText = `Molekül mit ${vertexCount} Atomen.`;
+            if (uniqueHetero.length > 0) {
+                descText += ` Enthält: ${uniqueHetero.join(', ')}.`;
+            }
+
+            // Natürlichsprachliche Beschreibung hinzufügen
+            try {
+                const generator = new DescriptionGenerator(
+                    preprocessor.graph,
+                    preprocessor.rings,
+                    preprocessor.graph.edges,
+                    data.smiles || ''
+                );
+                const naturalDesc = generator.generate();
+                if (naturalDesc) {
+                    descText += ' ' + naturalDesc;
+                }
+            } catch (e) {
+                // Beschreibungsgenerator darf nicht den Draw-Vorgang blockieren
+            }
+
+            desc.textContent = descText;
+            target.prepend(desc);
+
+            target.setAttribute('role', 'img');
         }
 
         this.svgWrapper.constructSvg();

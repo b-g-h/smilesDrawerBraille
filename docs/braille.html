@@ -107,6 +107,46 @@
             color: #fff;
             border-color: #333;
         }
+
+        /* Barrierefreiheit: Beschreibungs-Overlay */
+        .sr-live {
+            position: absolute;
+            left: -10000px;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+        }
+
+        .description-panel {
+            display: none;
+            background: #fff;
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            max-width: 600px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .description-panel.visible {
+            display: block;
+        }
+
+        .description-panel h2 {
+            margin-top: 0;
+            font-size: 1.1rem;
+        }
+
+        .description-panel p {
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .description-panel .kbd-hint {
+            margin-top: 0.75rem;
+            font-size: 0.8rem;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -117,6 +157,7 @@
         <input id="smiles-input" type="text" value="CC(=O)Oc1ccccc1C(=O)O" placeholder="z. B. C1CCCCC1">
         <p class="hint">
             Voreingestellt: Aspirin. Drücke <kbd>Enter</kbd> oder klicke auf die Beispiele unten.
+            Beschreibung der Struktur: <kbd>Alt</kbd>+<kbd>D</kbd>.
         </p>
     </div>
 
@@ -127,6 +168,11 @@
             <svg id="output-braille"></svg>
             <div class="toggle" style="margin-top: 0.5rem;">
                 <button onclick="downloadSVG('output-braille', 'braille.svg')" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">SVG Download</button>
+            </div>
+            <div id="description-panel" class="description-panel" role="region" aria-live="polite" aria-label="Molekülbeschreibung">
+                <h2>Beschreibung der Struktur</h2>
+                <p id="description-text"></p>
+                <div class="kbd-hint">Tastenkombination <kbd>Alt</kbd>+<kbd>D</kbd> zum Schließen.</div>
             </div>
         </div>
     </div>
@@ -219,6 +265,34 @@
         }
 
         input.addEventListener('keyup', e => { if (e.key === 'Enter') draw(input.value); });
+
+        // Tastenkombination Alt+D: Beschreibung ein-/ausblenden
+        document.addEventListener('keydown', e => {
+            if (e.altKey && (e.key === 'd' || e.key === 'D')) {
+                e.preventDefault();
+                toggleDescription();
+            }
+        });
+
+        function toggleDescription() {
+            const panel = document.getElementById('description-panel');
+            const textEl = document.getElementById('description-text');
+            const svg = document.getElementById('output-braille');
+            const desc = svg.querySelector('desc');
+
+            if (panel.classList.contains('visible')) {
+                panel.classList.remove('visible');
+            } else {
+                if (desc && desc.textContent) {
+                    textEl.textContent = desc.textContent;
+                } else {
+                    textEl.textContent = 'Keine Beschreibung verfügbar.';
+                }
+                panel.classList.add('visible');
+                // Screenreader-Fokus auf den Text setzen
+                textEl.focus();
+            }
+        }
 
         // Initiales Zeichnen
         draw(input.value);
