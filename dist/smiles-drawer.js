@@ -14051,7 +14051,7 @@
       let textElem = document.createElementNS("http://www.w3.org/2000/svg", "text");
       textElem.setAttributeNS(null, "class", "element");
       textElem.setAttributeNS(null, "fill", "#000000");
-      textElem.setAttributeNS(null, "font-family", "Euro850");
+      textElem.setAttributeNS(null, "font-family", this.opts.fontFamily);
       textElem.setAttributeNS(null, "font-size", this.opts.fontSizeLarge + "pt");
       let g = document.createElementNS("http://www.w3.org/2000/svg", "g");
       if (direction === "left") {
@@ -14527,6 +14527,17 @@
     }
   };
 
+  // src/ControlSvgDrawer.js
+  var ControlSvgDrawer = class extends BrailleSvgDrawer {
+    constructor(options, clear = true) {
+      const controlDefaults = {
+        fontFamily: "Arial, Helvetica, sans-serif"
+      };
+      const merged = Object.assign({}, controlDefaults, options);
+      super(merged, clear);
+    }
+  };
+
   // app.js
   var SmilesDrawerNS = {
     Version: "2.3.0",
@@ -14538,6 +14549,7 @@
     SmiDrawer: SmilesDrawer,
     SvgDrawer,
     BrailleSvgDrawer,
+    ControlSvgDrawer,
     DescriptionGenerator
   };
   SmilesDrawerNS.clean = function(smiles) {

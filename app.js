@@ -7,6 +7,7 @@ import ReactionParser from './src/ReactionParser';
 import SmiDrawer      from './src/SmilesDrawer';
 import SvgDrawer      from './src/SvgDrawer';
 import BrailleSvgDrawer from './src/BrailleSvgDrawer';
+import ControlSvgDrawer from './src/ControlSvgDrawer';
 import DescriptionGenerator from './src/DescriptionGenerator';
 
 /**
@@ -24,6 +25,7 @@ const SmilesDrawerNS = {
     SmiDrawer:      SmiDrawer,
     SvgDrawer:      SvgDrawer,
     BrailleSvgDrawer: BrailleSvgDrawer,
+    ControlSvgDrawer: ControlSvgDrawer,
     DescriptionGenerator: DescriptionGenerator,
 };
 

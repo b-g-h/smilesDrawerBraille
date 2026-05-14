@@ -176,6 +176,15 @@
                 <div class="kbd-hint">Tastenkombination <kbd>Alt</kbd>+<kbd>D</kbd> zum Schließen.</div>
             </div>
         </div>
+
+        <div class="card">
+            <h3>Kontrolle (Standardfont, 24 pt, rein schwarz)</h3>
+            <div class="smiles" id="smiles-label-control">CC(=O)Oc1ccccc1C(=O)O</div>
+            <svg id="output-control"></svg>
+            <div class="toggle" style="margin-top: 0.5rem;">
+                <button onclick="downloadSVG('output-control', 'control.svg')" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">SVG Download</button>
+            </div>
+        </div>
     </div>
 
     <div class="controls" style="margin-top:1.5rem;">
@@ -201,6 +210,8 @@
         const input = document.getElementById('smiles-input');
         const labelBraille = document.getElementById('smiles-label-braille');
         const svgBraille = document.getElementById('output-braille');
+        const labelControl = document.getElementById('smiles-label-control');
+        const svgControl = document.getElementById('output-control');
 
         // Braille-Drawer
         const brailleDrawer = new SmilesDrawer.BrailleSvgDrawer({
@@ -208,23 +219,39 @@
             height: 300,
         });
 
+        // Kontroll-Drawer (Standardfont)
+        const controlDrawer = new SmilesDrawer.ControlSvgDrawer({
+            width: 400,
+            height: 300,
+        });
+
         function draw(smiles) {
-            // Braille
             try {
                 SmilesDrawer.parse(smiles, tree => {
+                    // Braille
                     try {
                         brailleDrawer.draw(tree, svgBraille, 'braille');
                     } catch (innerErr) {
                         svgBraille.innerHTML = '<text x="10" y="20" fill="red">Render-Fehler: ' + innerErr.message + '</text>';
-                        console.error('Render-Fehler:', innerErr);
+                        console.error('Render-Fehler (Braille):', innerErr);
+                    }
+
+                    // Kontrolle
+                    try {
+                        controlDrawer.draw(tree, svgControl, 'braille');
+                    } catch (innerErr) {
+                        svgControl.innerHTML = '<text x="10" y="20" fill="red">Render-Fehler: ' + innerErr.message + '</text>';
+                        console.error('Render-Fehler (Kontrolle):', innerErr);
                     }
                 });
             } catch (e) {
                 svgBraille.innerHTML = '<text x="10" y="20" fill="red">Parse-Fehler: ' + e.message + '</text>';
-                console.error('Braille-Fehler:', e);
+                svgControl.innerHTML = '<text x="10" y="20" fill="red">Parse-Fehler: ' + e.message + '</text>';
+                console.error('Parse-Fehler:', e);
             }
 
             labelBraille.textContent = smiles;
+            labelControl.textContent = smiles;
         }
 
         async function getSVGWithEmbeddedFont(svgId) {
