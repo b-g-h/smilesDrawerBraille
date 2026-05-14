@@ -13951,6 +13951,7 @@
   var BrailleSvgWrapper = class extends SvgWrapper {
     constructor(themeManager, target, options, clear = true) {
       super(themeManager, target, options, clear);
+      this.textFontFamily = "'Euro850', 'Euro-850', Arial, sans-serif";
       this.style.textContent = `
             .element {
                 font: ${this.opts.fontSizeLarge}pt ${this.opts.fontFamily};
@@ -14051,7 +14052,7 @@
       let textElem = document.createElementNS("http://www.w3.org/2000/svg", "text");
       textElem.setAttributeNS(null, "class", "element");
       textElem.setAttributeNS(null, "fill", "#000000");
-      textElem.setAttributeNS(null, "font-family", "Euro850");
+      textElem.setAttributeNS(null, "font-family", this.textFontFamily);
       textElem.setAttributeNS(null, "font-size", this.opts.fontSizeLarge + "pt");
       let g = document.createElementNS("http://www.w3.org/2000/svg", "g");
       if (direction === "left") {
@@ -14467,7 +14468,7 @@
       if (!infoOnly) {
         this.themeManager = new ThemeManager(this.opts.themes, "braille");
         if (this.svgWrapper === null || this.clear) {
-          this.svgWrapper = new BrailleSvgWrapper(this.themeManager, target, this.opts, this.clear);
+          this.svgWrapper = this.createSvgWrapper(this.themeManager, target, this.opts, this.clear);
         }
       }
       preprocessor.processGraph();
@@ -14525,6 +14526,17 @@
       }
       return target;
     }
+    createSvgWrapper(themeManager, target, options, clear) {
+      return new BrailleSvgWrapper(themeManager, target, options, clear);
+    }
+  };
+
+  // src/ControlSvgWrapper.js
+  var ControlSvgWrapper = class extends BrailleSvgWrapper {
+    constructor(themeManager, target, options, clear = true) {
+      super(themeManager, target, options, clear);
+      this.textFontFamily = "Arial, Helvetica, sans-serif";
+    }
   };
 
   // src/ControlSvgDrawer.js
@@ -14536,26 +14548,8 @@
       const merged = Object.assign({}, controlDefaults, options);
       super(merged, clear);
     }
-    draw(data, target, themeName = "braille", weights = null, infoOnly = false, highlight_atoms = [], weightsNormalized = false) {
-      const svg = super.draw(data, target, themeName, weights, infoOnly, highlight_atoms, weightsNormalized);
-      if (!infoOnly && svg instanceof SVGElement) {
-        const texts = svg.querySelectorAll("text");
-        texts.forEach((text) => {
-          text.setAttribute("font-family", "Arial, Helvetica, sans-serif");
-        });
-        const style = svg.querySelector("style");
-        if (style) {
-          style.textContent = style.textContent.replace(
-            /font:\s*\d+pt\s+['"]?Euro850['"]?,?\s*['"]?Euro-850['"]?,?\s*Arial,?\s*sans-serif;?/g,
-            `font: ${this.opts.fontSizeLarge}pt Arial, Helvetica, sans-serif;`
-          );
-          style.textContent = style.textContent.replace(
-            /font-family:\s*['"]?Euro850['"]?,?\s*['"]?Euro-850['"]?,?\s*Arial,?\s*sans-serif;?/g,
-            `font-family: Arial, Helvetica, sans-serif;`
-          );
-        }
-      }
-      return svg;
+    createSvgWrapper(themeManager, target, options, clear) {
+      return new ControlSvgWrapper(themeManager, target, options, clear);
     }
   };
 
@@ -14571,6 +14565,7 @@
     SvgDrawer,
     BrailleSvgDrawer,
     ControlSvgDrawer,
+    ControlSvgWrapper,
     DescriptionGenerator
   };
   SmilesDrawerNS.clean = function(smiles) {

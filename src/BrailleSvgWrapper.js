@@ -16,6 +16,9 @@ export default class BrailleSvgWrapper extends SvgWrapper {
     constructor(themeManager, target, options, clear = true) {
         super(themeManager, target, options, clear);
 
+        // Font-Stack für SVG-Text-Attribute (wird von ControlSvgWrapper überschrieben)
+        this.textFontFamily = "'Euro850', 'Euro-850', Arial, sans-serif";
+
         // Euro850-Style injizieren (überschreibt den vom Konstruktor gesetzten Style)
         this.style.textContent = `
             .element {
@@ -140,7 +143,7 @@ export default class BrailleSvgWrapper extends SvgWrapper {
         // Direkt schwarz – kein weißer Text mehr
         textElem.setAttributeNS(null, 'fill', '#000000');
         // Font-Attribute explizit setzen (svg2pdf liest keine CSS-Klassen)
-        textElem.setAttributeNS(null, 'font-family', 'Euro850');
+        textElem.setAttributeNS(null, 'font-family', this.textFontFamily);
         textElem.setAttributeNS(null, 'font-size', this.opts.fontSizeLarge + 'pt');
         let g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
 

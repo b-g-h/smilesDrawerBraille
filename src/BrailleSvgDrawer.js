@@ -57,7 +57,7 @@ export default class BrailleSvgDrawer extends SvgDrawer {
         if (!infoOnly) {
             this.themeManager = new ThemeManager(this.opts.themes, 'braille');
             if (this.svgWrapper === null || this.clear) {
-                this.svgWrapper = new BrailleSvgWrapper(this.themeManager, target, this.opts, this.clear);
+                this.svgWrapper = this.createSvgWrapper(this.themeManager, target, this.opts, this.clear);
             }
         }
 
@@ -132,5 +132,9 @@ export default class BrailleSvgDrawer extends SvgDrawer {
         }
 
         return target;
+    }
+
+    createSvgWrapper(themeManager, target, options, clear) {
+        return new BrailleSvgWrapper(themeManager, target, options, clear);
     }
 }

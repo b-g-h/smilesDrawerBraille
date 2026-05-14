@@ -8,6 +8,7 @@ import SmiDrawer      from './src/SmilesDrawer';
 import SvgDrawer      from './src/SvgDrawer';
 import BrailleSvgDrawer from './src/BrailleSvgDrawer';
 import ControlSvgDrawer from './src/ControlSvgDrawer';
+import ControlSvgWrapper from './src/ControlSvgWrapper';
 import DescriptionGenerator from './src/DescriptionGenerator';
 
 /**
@@ -26,6 +27,7 @@ const SmilesDrawerNS = {
     SvgDrawer:      SvgDrawer,
     BrailleSvgDrawer: BrailleSvgDrawer,
     ControlSvgDrawer: ControlSvgDrawer,
+    ControlSvgWrapper: ControlSvgWrapper,
     DescriptionGenerator: DescriptionGenerator,
 };
 
