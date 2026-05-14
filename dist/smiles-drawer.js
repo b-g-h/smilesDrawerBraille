@@ -13952,15 +13952,7 @@
     constructor(themeManager, target, options, clear = true) {
       super(themeManager, target, options, clear);
       this.textFontFamily = "'Euro850', 'Euro-850', Arial, sans-serif";
-      this.style.textContent = `
-            .element {
-                font: ${this.opts.fontSizeLarge}pt ${this.opts.fontFamily};
-                font-weight: normal;
-            }
-            .sub {
-                font: ${this.opts.fontSizeSmall}pt ${this.opts.fontFamily};
-            }
-        `;
+      this.style.textContent = "";
     }
     /**
      * Zeichnet Atomsymbole ohne Unicode-Ladungs-/Isotop-Zeichen,

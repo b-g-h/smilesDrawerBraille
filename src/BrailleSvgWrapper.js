@@ -20,15 +20,10 @@ export default class BrailleSvgWrapper extends SvgWrapper {
         this.textFontFamily = "'Euro850', 'Euro-850', Arial, sans-serif";
 
         // Euro850-Style injizieren (überschreibt den vom Konstruktor gesetzten Style)
-        this.style.textContent = `
-            .element {
-                font: ${this.opts.fontSizeLarge}pt ${this.opts.fontFamily};
-                font-weight: normal;
-            }
-            .sub {
-                font: ${this.opts.fontSizeSmall}pt ${this.opts.fontFamily};
-            }
-        `;
+        // WICHTIG: Wir entfernen das CSS-Styling hier, weil es den Font
+        // auf Attribut-Ebene überschreibt. Der Font wird stattdessen direkt
+        // auf jedem <text>-Element als SVG-Attribut gesetzt (siehe write()).
+        this.style.textContent = '';
     }
 
     /**
