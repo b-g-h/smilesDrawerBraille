@@ -225,12 +225,36 @@
             height: 560,
         });
 
+        // Hilfsfunktion: viewBox auf A5-Querformat-Seitenverhältnis padden
+        function fixAspectRatio(svgElement, targetW, targetH) {
+            const vb = svgElement.getAttribute('viewBox');
+            if (!vb) return;
+            const parts = vb.split(/\s+/).map(Number);
+            if (parts.length !== 4) return;
+            let [x, y, w, h] = parts;
+            const targetRatio = targetW / targetH;
+            const currentRatio = w / h;
+            if (currentRatio < targetRatio) {
+                const newW = h * targetRatio;
+                x -= (newW - w) / 2;
+                w = newW;
+            } else if (currentRatio > targetRatio) {
+                const newH = w / targetRatio;
+                y -= (newH - h) / 2;
+                h = newH;
+            }
+            svgElement.setAttribute('viewBox', `${x} ${y} ${w} ${h}`);
+            svgElement.setAttribute('width', targetW);
+            svgElement.setAttribute('height', targetH);
+        }
+
         function draw(smiles) {
             try {
                 SmilesDrawer.parse(smiles, tree => {
                     // Braille
                     try {
                         brailleDrawer.draw(tree, svgBraille, 'braille');
+                        fixAspectRatio(svgBraille, 794, 560);
                     } catch (innerErr) {
                         svgBraille.innerHTML = '<text x="10" y="20" fill="red">Render-Fehler: ' + innerErr.message + '</text>';
                         console.error('Render-Fehler (Braille):', innerErr);
@@ -239,6 +263,7 @@
                     // Kontrolle
                     try {
                         controlDrawer.draw(tree, svgControl, 'braille');
+                        fixAspectRatio(svgControl, 794, 560);
                     } catch (innerErr) {
                         svgControl.innerHTML = '<text x="10" y="20" fill="red">Render-Fehler: ' + innerErr.message + '</text>';
                         console.error('Render-Fehler (Kontrolle):', innerErr);
