@@ -55,7 +55,7 @@
 
         .gallery {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(560px, 1fr));
             gap: 1.5rem;
         }
 
@@ -213,16 +213,16 @@
         const labelControl = document.getElementById('smiles-label-control');
         const svgControl = document.getElementById('output-control');
 
-        // Braille-Drawer
+        // Braille-Drawer – DIN A5 bei 96 DPI (148×210 mm)
         const brailleDrawer = new SmilesDrawer.BrailleSvgDrawer({
-            width: 400,
-            height: 300,
+            width: 560,
+            height: 794,
         });
 
-        // Kontroll-Drawer (Standardfont)
+        // Kontroll-Drawer (Standardfont) – DIN A5 bei 96 DPI
         const controlDrawer = new SmilesDrawer.ControlSvgDrawer({
-            width: 400,
-            height: 300,
+            width: 560,
+            height: 794,
         });
 
         function draw(smiles) {
@@ -336,7 +336,7 @@
 
             // viewBox normalisieren: x/y auf 0 setzen, alle Elemente verschieben
             const vb = svgElement.getAttribute('viewBox');
-            let svgW_px = 400, svgH_px = 300;
+            let svgW_px = 560, svgH_px = 794;
             let vbX = 0, vbY = 0;
             if (vb) {
                 const parts = vb.split(/\s+/).map(Number);
