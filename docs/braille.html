@@ -412,46 +412,34 @@ async function downloadSVG(svgId, fileName) {
         async function downloadPDF(svgId, fileName) {
             const { jsPDF } = window.jspdf;
 
-            // A4 Querformat @ 96 DPI = 1122 x 794 px = 297 x 210 mm
-            const pageW = 1122;
-            const pageH = 794;
-            const pxToMm = 25.4 / 96;
-            const pageW_mm = pageW * pxToMm; // 297
-            const pageH_mm = pageH * pxToMm; // 210
-
-            // 1. jsPDF mit A4 Querformat initialisieren
-            const doc = new jsPDF('l', 'mm', 'a4');
-
-            // 2. SVG serialisieren (wie bei downloadSVG)
+            // 1. Seiten-SVG exakt wie bei downloadSVG aufbauen
             const svgData = await getSVGWithEmbeddedFont(svgId);
             const parser = new DOMParser();
             const origDoc = parser.parseFromString(svgData, 'image/svg+xml');
             const origSvg = origDoc.documentElement;
 
-            // 3. Maße auslesen
             const vb = origSvg.getAttribute('viewBox') || `0 0 ${origSvg.getAttribute('width') || 500} ${origSvg.getAttribute('height') || 500}`;
             const [vx, vy, vw, vh] = vb.split(/\s+/).map(Number);
             const origW = parseFloat(origSvg.getAttribute('width') || vw);
             const origH = parseFloat(origSvg.getAttribute('height') || vh);
 
-            // 4. Temporäres SVG wie bei downloadSVG aufbauen
+            const pageW = 1122;
+            const pageH = 794;
+
             const page = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
             page.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
             page.setAttribute('viewBox', `0 0 ${pageW} ${pageH}`);
             page.setAttribute('width', pageW);
             page.setAttribute('height', pageH);
 
-            // Weißer Hintergrund
             const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
             bg.setAttribute('width', pageW);
             bg.setAttribute('height', pageH);
             bg.setAttribute('fill', '#ffffff');
             page.appendChild(bg);
 
-            // Font-Styles kopieren
             origSvg.querySelectorAll('style').forEach(s => page.appendChild(s.cloneNode(true)));
 
-            // Titel (Euro850, 24pt)
             const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             title.setAttribute('x', 40);
             title.setAttribute('y', 80);
@@ -462,7 +450,6 @@ async function downloadSVG(svgId, fileName) {
             title.textContent = currentSmiles || '';
             page.appendChild(title);
 
-            // Graue Unterzeile (Arial, 14pt)
             const sub = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             sub.setAttribute('x', 40);
             sub.setAttribute('y', 120);
@@ -473,7 +460,6 @@ async function downloadSVG(svgId, fileName) {
             sub.textContent = currentSmiles || '';
             page.appendChild(sub);
 
-            // Molekül-Inhalt als <g> mit Transform (svg2pdf mag verschachtelte SVGs nicht)
             const contentY = 160;
             const scaledW = origW * 2;
             const scaledH = origH * 2;
@@ -489,21 +475,34 @@ async function downloadSVG(svgId, fileName) {
 
             page.appendChild(g);
 
-            // 5. Temporär an DOM hängen (svg2pdf braucht ein gerendertes Element)
-            page.style.position = 'absolute';
-            page.style.left = '-9999px';
-            page.style.top = '0';
-            document.body.appendChild(page);
+            // 2. SVG serialisieren und als Bild laden
+            const out = new XMLSerializer().serializeToString(page);
+            const blob = new Blob([out], {type: 'image/svg+xml;charset=utf-8'});
+            const url = URL.createObjectURL(blob);
 
-            // 6. In PDF rendern (A4 Querformat = 297 x 210 mm)
-            await svg2pdf(page, doc, {
-                x: 0,
-                y: 0,
-                width: pageW_mm,
-                height: pageH_mm
+            const img = new Image();
+            img.src = url;
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
             });
 
-            document.body.removeChild(page);
+            // 3. Auf Canvas mit hoher Auflösung zeichnen (300 DPI ≈ 3.125x @ 96 DPI)
+            const dpiScale = 300 / 96;
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(pageW * dpiScale);
+            canvas.height = Math.round(pageH * dpiScale);
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            URL.revokeObjectURL(url);
+
+            // 4. Als Bild in A4-Quer-PDF einfügen
+            const doc = new jsPDF('l', 'mm', 'a4');
+            const imgData = canvas.toDataURL('image/png');
+            doc.addImage(imgData, 'PNG', 0, 0, 297, 210);
             doc.save(fileName);
         }
 
