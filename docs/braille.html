@@ -55,8 +55,14 @@
 
         .gallery {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(800px, 1fr));
+            grid-template-columns: 1fr;
             gap: 1.5rem;
+        }
+
+        @media (min-width: 900px) {
+            .gallery {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         .card {
@@ -84,6 +90,7 @@
             display: block;
             width: 100%;
             height: auto;
+            max-width: 100%;
             background: #fff;
             border: 1px solid #e0e0e0;
             border-radius: 4px;
@@ -168,7 +175,7 @@
             <svg id="output-braille"></svg>
             <div class="toggle" style="margin-top: 0.5rem;">
                 <button onclick="downloadSVG('output-braille', 'braille.svg')" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">SVG Download</button>
-                <button onclick="downloadPDF('output-braille', 'braille.pdf')" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; margin-left: 0.3rem;">PDF Download (A4)</button>
+                <button onclick="downloadPDF('output-braille', 'braille.pdf')" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; margin-left: 0.3rem;">PDF Download (A5 Quer)</button>
             </div>
             <div id="description-panel" class="description-panel" role="region" aria-live="polite" aria-label="Molekülbeschreibung">
                 <h2>Beschreibung der Struktur</h2>
@@ -330,7 +337,7 @@
             const svg = document.getElementById(svgId);
 
             // Euro850 in jsPDF einbetten
-            const doc = new jsPDF('l', 'mm', 'a4');
+            const doc = new jsPDF('l', 'mm', 'a5');
             try {
                 const fontResponse = await fetch('./fonts/Euro850.ttf');
                 if (fontResponse.ok) {
@@ -354,10 +361,10 @@
             const svgDoc = parser.parseFromString(svgData, 'image/svg+xml');
             const svgElement = svgDoc.documentElement;
 
-            // Seitenmaße
-            const pageWidth = 297;
-            const pageHeight = 210;
-            const margin = 20;
+            // Seitenmaße – DIN A5 Querformat (210 × 148 mm)
+            const pageWidth = 210;
+            const pageHeight = 148;
+            const margin = 10;
 
             // viewBox normalisieren: x/y auf 0 setzen, alle Elemente verschieben
             const vb = svgElement.getAttribute('viewBox');
