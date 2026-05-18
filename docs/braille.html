@@ -480,6 +480,34 @@ async function downloadSVG(svgId, fileName) {
             scaledSvg.style.left = '-9999px';
             document.body.appendChild(scaledSvg);
 
+            // svg2pdf korrigiert font-size mit doc.internal.scaleFactor (mm: 72/25.4 ≈ 2.83)
+            // Das führt bei 12pt zu 34pt statt 24pt. Wir korrigieren font-size im SVG,
+            // damit nach der Multiplikation die gewünschte 24pt herauskommen.
+            const scaleFactor = doc.internal.scaleFactor; // 1 für pt, 72/25.4 für mm
+            const desiredPdfFontPt = 24; // Generierung 12pt × 2
+            const fontCorrection = desiredPdfFontPt / (12 * scaleFactor);
+
+            scaledSvg.querySelectorAll('text, tspan').forEach(el => {
+                const fs = el.getAttribute('font-size');
+                if (fs) {
+                    const m = fs.match(/([\d.]+)(.*)/);
+                    if (m) el.setAttribute('font-size', (parseFloat(m[1]) * fontCorrection) + (m[2] || 'pt'));
+                }
+            });
+            scaledSvg.querySelectorAll('*').forEach(el => {
+                const st = el.getAttribute('style');
+                if (st && st.includes('font-size')) {
+                    el.setAttribute('style', st.replace(/font-size\s*:\s*([\d.]+)([^;]*)/g, (_, v, u) =>
+                        'font-size: ' + (parseFloat(v) * fontCorrection) + (u || 'pt')));
+                }
+            });
+            scaledSvg.querySelectorAll('style').forEach(style => {
+                if (style.textContent) {
+                    style.textContent = style.textContent.replace(/font-size\s*:\s*([\d.]+)([^;}{]*)/g, (_, v, u) =>
+                        'font-size: ' + (parseFloat(v) * fontCorrection) + (u || 'pt'));
+                }
+            });
+
             // 2×-Skalierung in mm
             const pdfW = origW * 2 * pxToMm;
             const pdfH = origH * 2 * pxToMm;
