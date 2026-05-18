@@ -175,7 +175,7 @@
             <svg id="output-braille"></svg>
             <div class="toggle" style="margin-top: 0.5rem;">
                 <button onclick="downloadSVG('output-braille', 'braille.svg')" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">SVG Download</button>
-                <button onclick="downloadPDF('output-braille', 'braille.pdf')" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; margin-left: 0.3rem;">PDF Download (A5 Quer)</button>
+                <button onclick="downloadPDF('output-braille', 'braille.pdf')" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; margin-left: 0.3rem;">PDF Download (A4 Quer)</button>
             </div>
             <div id="description-panel" class="description-panel" role="region" aria-live="polite" aria-label="Molekülbeschreibung">
                 <h2>Beschreibung der Struktur</h2>
@@ -411,122 +411,103 @@ async function downloadSVG(svgId, fileName) {
 
         async function downloadPDF(svgId, fileName) {
             const { jsPDF } = window.jspdf;
-            const svg = document.getElementById(svgId);
 
-            // Euro850 in jsPDF einbetten
-            const doc = new jsPDF('l', 'mm', 'a5');
-            try {
-                const fontResponse = await fetch('./fonts/Euro850.ttf');
-                if (fontResponse.ok) {
-                    const fontBlob = await fontResponse.blob();
-                    const fontBase64 = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result.split(',')[1]);
-                        reader.readAsDataURL(fontBlob);
-                    });
-                    doc.addFileToVFS('Euro850.ttf', fontBase64);
-                    doc.addFont('Euro850.ttf', 'Euro850', 'normal');
-                    doc.setFont('Euro850');
-                }
-            } catch (e) {
-                console.error('Font embedding failed:', e);
-            }
+            // A4 Querformat @ 96 DPI = 1122 x 794 px = 297 x 210 mm
+            const pageW = 1122;
+            const pageH = 794;
+            const pxToMm = 25.4 / 96;
+            const pageW_mm = pageW * pxToMm; // 297
+            const pageH_mm = pageH * pxToMm; // 210
 
-            // SVG serialisieren (Font ist bereits via @font-face im SVG eingebettet)
+            // 1. jsPDF mit A4 Querformat initialisieren
+            const doc = new jsPDF('l', 'mm', 'a4');
+
+            // 2. SVG serialisieren (wie bei downloadSVG)
             const svgData = await getSVGWithEmbeddedFont(svgId);
             const parser = new DOMParser();
-            const svgDoc = parser.parseFromString(svgData, 'image/svg+xml');
-            const svgElement = svgDoc.documentElement;
+            const origDoc = parser.parseFromString(svgData, 'image/svg+xml');
+            const origSvg = origDoc.documentElement;
 
-            // Seitenmaße – DIN A5 Querformat (210 × 148 mm)
-            const pageWidth = 210;
-            const pageHeight = 148;
-            const margin = 10;
+            // 3. Maße auslesen
+            const vb = origSvg.getAttribute('viewBox') || `0 0 ${origSvg.getAttribute('width') || 500} ${origSvg.getAttribute('height') || 500}`;
+            const [vx, vy, vw, vh] = vb.split(/\s+/).map(Number);
+            const origW = parseFloat(origSvg.getAttribute('width') || vw);
+            const origH = parseFloat(origSvg.getAttribute('height') || vh);
 
-            // viewBox normalisieren: x/y auf 0 setzen, alle Elemente verschieben
-            const vb = svgElement.getAttribute('viewBox');
-            let svgW_px = 794, svgH_px = 560;
-            let vbX = 0, vbY = 0;
-            if (vb) {
-                const parts = vb.split(/\s+/).map(Number);
-                if (parts.length === 4) {
-                    vbX = parts[0];
-                    vbY = parts[1];
-                    svgW_px = parts[2];
-                    svgH_px = parts[3];
+            // 4. Temporäres SVG wie bei downloadSVG aufbauen
+            const page = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            page.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            page.setAttribute('viewBox', `0 0 ${pageW} ${pageH}`);
+            page.setAttribute('width', pageW);
+            page.setAttribute('height', pageH);
 
-                    // Wenn x oder y nicht 0 sind, alle Elemente verschieben
-                    if (vbX !== 0 || vbY !== 0) {
-                        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-                        g.setAttribute('transform', `translate(${-vbX}, ${-vbY})`);
-                        while (svgElement.firstChild) {
-                            g.appendChild(svgElement.firstChild);
-                        }
-                        svgElement.appendChild(g);
-                    }
+            // Weißer Hintergrund
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('width', pageW);
+            bg.setAttribute('height', pageH);
+            bg.setAttribute('fill', '#ffffff');
+            page.appendChild(bg);
 
-                    svgElement.setAttribute('viewBox', `0 0 ${svgW_px} ${svgH_px}`);
-                }
-            }
+            // Font-Styles kopieren
+            origSvg.querySelectorAll('style').forEach(s => page.appendChild(s.cloneNode(true)));
 
-            // width/height setzen (in px)
-            svgElement.setAttribute('width', svgW_px);
-            svgElement.setAttribute('height', svgH_px);
+            // Titel (Euro850, 24pt)
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            title.setAttribute('x', 40);
+            title.setAttribute('y', 80);
+            title.setAttribute('text-anchor', 'left');
+            title.setAttribute('font-family', "'Euro850', 'Euro-850', Arial, sans-serif");
+            title.setAttribute('font-size', '24pt');
+            title.setAttribute('fill', '#000000');
+            title.textContent = currentSmiles || '';
+            page.appendChild(title);
 
-            // In mm umrechnen (96 DPI)
-            const pxToMm = 25.4 / 96;
-            let svgW_mm = svgW_px * pxToMm;
-            let svgH_mm = svgH_px * pxToMm;
+            // Graue Unterzeile (Arial, 14pt)
+            const sub = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            sub.setAttribute('x', 40);
+            sub.setAttribute('y', 120);
+            sub.setAttribute('text-anchor', 'left');
+            sub.setAttribute('font-family', 'Arial, Helvetica, sans-serif');
+            sub.setAttribute('font-size', '14pt');
+            sub.setAttribute('fill', '#cccccc');
+            sub.textContent = currentSmiles || '';
+            page.appendChild(sub);
 
-            // Skalierung für die Seite
-            const maxW = pageWidth - 2 * margin;
-            const maxH = pageHeight - 2 * margin;
-            let scale = Math.min(maxW / svgW_mm, maxH / svgH_mm, 1);
+            // Genestete SVG, um Faktor 2 vergrößert, horizontal zentriert
+            const contentY = 160;
+            const scaledW = origW * 2;
+            const scaledH = origH * 2;
+            const cx = (pageW - scaledW) / 2;
 
-            // Font-Size korrigieren: svg2pdf skaliert ALLES mit dem Faktor 'scale'.
-            const texts = svgElement.querySelectorAll('text');
-            texts.forEach(t => {
-                const fs = t.getAttribute('font-size');
-                if (fs) {
-                    const val = parseFloat(fs);
-                    const unit = fs.replace(/[0-9.]/g, '');
-                    const corrected = val / scale;
-                    t.setAttribute('font-size', corrected + unit);
-                }
+            const nested = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            nested.setAttribute('x', cx);
+            nested.setAttribute('y', contentY);
+            nested.setAttribute('width', scaledW);
+            nested.setAttribute('height', scaledH);
+            nested.setAttribute('viewBox', `${vx} ${vy} ${vw} ${vh}`);
+
+            Array.from(origSvg.childNodes).forEach(node => {
+                if (node.nodeName.toLowerCase() === 'style') return;
+                nested.appendChild(node.cloneNode(true));
             });
 
-            // Auch in <style> eingebettete font-size korrigieren
-            const styles = svgElement.querySelectorAll('style');
-            styles.forEach(s => {
-                if (s.textContent) {
-                    s.textContent = s.textContent.replace(/font-size:\s*([0-9.]+)(pt|px|em)/g, (match, val, unit) => {
-                        return 'font-size:' + (parseFloat(val) / scale) + unit;
-                    });
-                }
+            page.appendChild(nested);
+
+            // 5. Temporär an DOM hängen (svg2pdf braucht ein gerendertes Element)
+            page.style.position = 'absolute';
+            page.style.left = '-9999px';
+            page.style.top = '0';
+            document.body.appendChild(page);
+
+            // 6. In PDF rendern (A4 Querformat = 297 x 210 mm)
+            await svg2pdf(page, doc, {
+                x: 0,
+                y: 0,
+                width: pageW_mm,
+                height: pageH_mm
             });
 
-            // Weiße Hintergrund-Rechtecke korrigieren
-            const rects = svgElement.querySelectorAll('rect');
-            rects.forEach(r => {
-                ['x', 'y', 'width', 'height', 'rx', 'ry'].forEach(attr => {
-                    const val = r.getAttribute(attr);
-                    if (val && !isNaN(parseFloat(val))) {
-                        r.setAttribute(attr, parseFloat(val) / scale);
-                    }
-                });
-            });
-
-            let drawW_mm = svgW_mm * scale;
-            let drawH_mm = svgH_mm * scale;
-            let offsetX = (pageWidth - drawW_mm) / 2;
-            let offsetY = (pageHeight - drawH_mm) / 2;
-
-            await svg2pdf(svgElement, doc, {
-                x: offsetX,
-                y: offsetY,
-                width: drawW_mm,
-                height: drawH_mm
-            });
+            document.body.removeChild(page);
             doc.save(fileName);
         }
 
