@@ -473,25 +473,21 @@ async function downloadSVG(svgId, fileName) {
             sub.textContent = currentSmiles || '';
             page.appendChild(sub);
 
-            // Genestete SVG, um Faktor 2 vergrößert, horizontal zentriert
+            // Molekül-Inhalt als <g> mit Transform (svg2pdf mag verschachtelte SVGs nicht)
             const contentY = 160;
             const scaledW = origW * 2;
             const scaledH = origH * 2;
             const cx = (pageW - scaledW) / 2;
 
-            const nested = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            nested.setAttribute('x', cx);
-            nested.setAttribute('y', contentY);
-            nested.setAttribute('width', scaledW);
-            nested.setAttribute('height', scaledH);
-            nested.setAttribute('viewBox', `${vx} ${vy} ${vw} ${vh}`);
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.setAttribute('transform', `translate(${cx}, ${contentY}) scale(2) translate(${-vx}, ${-vy})`);
 
             Array.from(origSvg.childNodes).forEach(node => {
                 if (node.nodeName.toLowerCase() === 'style') return;
-                nested.appendChild(node.cloneNode(true));
+                g.appendChild(node.cloneNode(true));
             });
 
-            page.appendChild(nested);
+            page.appendChild(g);
 
             // 5. Temporär an DOM hängen (svg2pdf braucht ein gerendertes Element)
             page.style.position = 'absolute';
