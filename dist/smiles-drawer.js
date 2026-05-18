@@ -14479,7 +14479,7 @@
         fontSizeSmall: 12,
         bondThickness: 2,
         bondLength: 45,
-        bondSpacing: 12,
+        bondSpacing: 8,
         padding: 20
       };
       const merged = Object.assign({}, brailleDefaults, options);

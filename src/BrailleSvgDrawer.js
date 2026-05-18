@@ -23,7 +23,7 @@ export default class BrailleSvgDrawer extends SvgDrawer {
             fontSizeSmall: 12,
             bondThickness: 2.0,
             bondLength: 45,
-            bondSpacing: 12,
+            bondSpacing: 8,
             padding: 20.0,
         };
         const merged = Object.assign({}, brailleDefaults, options);
