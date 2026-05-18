@@ -426,20 +426,11 @@ async function downloadSVG(svgId, fileName) {
             doc.addFileToVFS('Euro850.ttf', fontBase64);
             doc.addFont('Euro850.ttf', 'Euro850', 'normal');
 
-            // 3. Molekül-SVG mit eingebettetem Font erzeugen und in DOM einhängen
+            // 3. Molekül-SVG mit eingebettetem Font erzeugen
             const svgData = await getSVGWithEmbeddedFont(svgId);
             const parser = new DOMParser();
             const origDoc = parser.parseFromString(svgData, 'image/svg+xml');
             const origSvg = origDoc.documentElement;
-
-            origSvg.style.position = 'absolute';
-            origSvg.style.left = '-9999px';
-            origSvg.style.top = '0';
-            document.body.appendChild(origSvg);
-
-            // Font laden abwarten, damit getComputedStyle den richtigen Font zurückgibt
-            await document.fonts.load('24pt Euro850');
-            await document.fonts.load('12pt Euro850');
 
             // 4. Maße
             const vb = origSvg.getAttribute('viewBox') || `0 0 ${origSvg.getAttribute('width') || 500} ${origSvg.getAttribute('height') || 500}`;
@@ -448,8 +439,8 @@ async function downloadSVG(svgId, fileName) {
             const origH = parseFloat(origSvg.getAttribute('height') || vh);
 
             const pxToMm = 25.4 / 96;
-            const pageW_mm = 297;
-            const cy = 45; // mm, unter Titel/Unterzeile
+            const pdfW = origW * 2 * pxToMm;
+            const pdfH = origH * 2 * pxToMm;
 
             // 5. Titel vektoriell (Braille, Euro850, 24pt)
             doc.setFont('Euro850');
@@ -463,67 +454,56 @@ async function downloadSVG(svgId, fileName) {
             doc.setTextColor(204, 204, 204);
             doc.text(currentSmiles || '', 10, 30);
 
-            // 7. Temporäres SVG mit width/height in mm (pdfW/pdfH), damit svg2pdf
-            //    die ViewBox-Transformation korrekt berechnet, egal ob es
-            //    parameters.width oder das Attribut verwendet.
-            const pdfW = origW * 2 * pxToMm;
-            const pdfH = origH * 2 * pxToMm;
+            // 7. Seiten-SVG in mm erstellen (A4 Quer = 297×210 mm)
+            //    Das Molekül wird als nested <svg> eingebettet, damit svg2pdf
+            //    die Skalierung konsistent übernimmt.
+            const page = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            page.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            page.setAttribute('width', '297mm');
+            page.setAttribute('height', '210mm');
+            page.setAttribute('viewBox', '0 0 297 210');
 
-            const scaledSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            scaledSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-            scaledSvg.setAttribute('width', pdfW);
-            scaledSvg.setAttribute('height', pdfH);
-            scaledSvg.setAttribute('viewBox', `${vx} ${vy} ${vw} ${vh}`);
+            // Weißer Hintergrund
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('width', '297');
+            bg.setAttribute('height', '210');
+            bg.setAttribute('fill', '#ffffff');
+            page.appendChild(bg);
 
-            origSvg.querySelectorAll('style').forEach(s => scaledSvg.appendChild(s.cloneNode(true)));
+            // Font-Styles kopieren
+            origSvg.querySelectorAll('style').forEach(s => page.appendChild(s.cloneNode(true)));
+
+            // Molekül als nested SVG, horizontal zentriert
+            const cx = (297 - pdfW) / 2;
+            const contentY = 35; // mm, unter Titel/Unterzeile
+
+            const nested = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            nested.setAttribute('x', cx);
+            nested.setAttribute('y', contentY);
+            nested.setAttribute('width', pdfW);
+            nested.setAttribute('height', pdfH);
+            nested.setAttribute('viewBox', `${vx} ${vy} ${vw} ${vh}`);
+
             Array.from(origSvg.childNodes).forEach(node => {
                 if (node.nodeName.toLowerCase() === 'style') return;
-                scaledSvg.appendChild(node.cloneNode(true));
+                nested.appendChild(node.cloneNode(true));
             });
 
-            scaledSvg.style.position = 'absolute';
-            scaledSvg.style.left = '-9999px';
-            document.body.appendChild(scaledSvg);
+            page.appendChild(nested);
 
-            // svg2pdf korrigiert font-size mit doc.internal.scaleFactor (mm: 72/25.4 ≈ 2.83)
-            // Das führt bei 12pt zu 34pt statt 24pt. Wir korrigieren font-size im SVG,
-            // damit nach der Multiplikation die gewünschte 24pt herauskommen.
-            const scaleFactor = doc.internal.scaleFactor; // 1 für pt, 72/25.4 für mm
-            const desiredPdfFontPt = 24; // Generierung 12pt × 2
-            const fontCorrection = desiredPdfFontPt / (12 * scaleFactor);
+            // In DOM einhängen (svg2pdf braucht gerendertes Element)
+            page.style.position = 'absolute';
+            page.style.left = '-9999px';
+            document.body.appendChild(page);
 
-            scaledSvg.querySelectorAll('text, tspan').forEach(el => {
-                const fs = el.getAttribute('font-size');
-                if (fs) {
-                    const m = fs.match(/([\d.]+)(.*)/);
-                    if (m) el.setAttribute('font-size', (parseFloat(m[1]) * fontCorrection) + (m[2] || 'pt'));
-                }
-            });
-            scaledSvg.querySelectorAll('*').forEach(el => {
-                const st = el.getAttribute('style');
-                if (st && st.includes('font-size')) {
-                    el.setAttribute('style', st.replace(/font-size\s*:\s*([\d.]+)([^;]*)/g, (_, v, u) =>
-                        'font-size: ' + (parseFloat(v) * fontCorrection) + (u || 'pt')));
-                }
-            });
-            scaledSvg.querySelectorAll('style').forEach(style => {
-                if (style.textContent) {
-                    style.textContent = style.textContent.replace(/font-size\s*:\s*([\d.]+)([^;}{]*)/g, (_, v, u) =>
-                        'font-size: ' + (parseFloat(v) * fontCorrection) + (u || 'pt'));
-                }
+            await svg2pdf(page, doc, {
+                x: 0,
+                y: 0,
+                width: 297,
+                height: 210
             });
 
-            const cx = (pageW_mm - pdfW) / 2;
-
-            await svg2pdf(scaledSvg, doc, {
-                x: cx,
-                y: cy,
-                width: pdfW,
-                height: pdfH
-            });
-
-            document.body.removeChild(scaledSvg);
-            document.body.removeChild(origSvg);
+            document.body.removeChild(page);
             doc.save(fileName);
         }
 
