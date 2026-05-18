@@ -463,12 +463,8 @@ async function downloadSVG(svgId, fileName) {
             page.setAttribute('height', '210mm');
             page.setAttribute('viewBox', '0 0 297 210');
 
-            // Weißer Hintergrund
-            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            bg.setAttribute('width', '297');
-            bg.setAttribute('height', '210');
-            bg.setAttribute('fill', '#ffffff');
-            page.appendChild(bg);
+            // KEIN weißer Hintergrund – jsPDF hat ohnehin weißen Hintergrund,
+            // und ein Rechteck würde den zuvor gerenderten Titel übermalen.
 
             // Font-Styles kopieren
             origSvg.querySelectorAll('style').forEach(s => page.appendChild(s.cloneNode(true)));
@@ -490,6 +486,34 @@ async function downloadSVG(svgId, fileName) {
             });
 
             page.appendChild(nested);
+
+            // svg2pdf interpretiert font-size="24pt" als 24 px und rechnet
+            // px→pt mit 0.75 (72/96). Ergebnis: 24 pt → 18 pt.
+            // Workaround: Wir geben font-size in px an (pt × 4/3), damit
+            // svg2pdf nach der Umrechnung die korrekte pt-Größe erhält.
+            const ptToPx = 4 / 3;
+            page.querySelectorAll('text, tspan').forEach(el => {
+                const fs = el.getAttribute('font-size');
+                if (fs) {
+                    const m = fs.match(/([\d.]+)(.*)/);
+                    if (m && m[2].trim() === 'pt') {
+                        el.setAttribute('font-size', (parseFloat(m[1]) * ptToPx) + 'px');
+                    }
+                }
+            });
+            page.querySelectorAll('*').forEach(el => {
+                const st = el.getAttribute('style');
+                if (st && st.includes('font-size')) {
+                    el.setAttribute('style', st.replace(/font-size\s*:\s*([\d.]+)\s*pt/g, (_, v) =>
+                        'font-size: ' + (parseFloat(v) * ptToPx) + 'px'));
+                }
+            });
+            page.querySelectorAll('style').forEach(style => {
+                if (style.textContent) {
+                    style.textContent = style.textContent.replace(/font-size\s*:\s*([\d.]+)\s*pt/g, (_, v) =>
+                        'font-size: ' + (parseFloat(v) * ptToPx) + 'px');
+                }
+            });
 
             // In DOM einhängen (svg2pdf braucht gerendertes Element)
             page.style.position = 'absolute';
