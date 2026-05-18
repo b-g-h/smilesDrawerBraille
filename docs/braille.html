@@ -261,7 +261,7 @@
                     // Braille
                     try {
                         brailleDrawer.draw(tree, svgBraille, 'braille');
-                        fixAspectRatio(svgBraille, 794, 560);
+                        //fixAspectRatio(svgBraille, 794, 560);
                     } catch (innerErr) {
                         svgBraille.innerHTML = '<text x="10" y="20" fill="red">Render-Fehler: ' + innerErr.message + '</text>';
                         console.error('Render-Fehler (Braille):', innerErr);
@@ -270,7 +270,7 @@
                     // Kontrolle
                     try {
                         controlDrawer.draw(tree, svgControl, 'braille');
-                        fixAspectRatio(svgControl, 794, 560);
+                        //fixAspectRatio(svgControl, 794, 560);
                     } catch (innerErr) {
                         svgControl.innerHTML = '<text x="10" y="20" fill="red">Render-Fehler: ' + innerErr.message + '</text>';
                         console.error('Render-Fehler (Kontrolle):', innerErr);
