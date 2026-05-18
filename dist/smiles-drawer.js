@@ -14458,7 +14458,7 @@
       const brailleDefaults = {
         fontFamily: "'Euro850', 'Euro-850', Arial, sans-serif",
         fontSizeLarge: 24,
-        fontSizeSmall: 8,
+        fontSizeSmall: 24,
         bondThickness: 2,
         bondLength: 45,
         bondSpacing: 12,
