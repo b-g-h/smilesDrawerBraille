@@ -466,14 +466,32 @@ async function downloadSVG(svgId, fileName) {
             doc.setTextColor(204, 204, 204);
             doc.text(currentSmiles || '', 10, 30);
 
-            // 7. Molekül als Vektor ins PDF rendern (2x skaliert, zentriert)
-            await svg2pdf(origSvg, doc, {
+            // 7. Temporäres SVG mit verdoppelter width/height, unveränderter viewBox
+            //    → exakte 2×-Skalierung ohne Transform/verschachteltes SVG
+            const scaledSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            scaledSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            scaledSvg.setAttribute('width', origW * 2);
+            scaledSvg.setAttribute('height', origH * 2);
+            scaledSvg.setAttribute('viewBox', `${vx} ${vy} ${vw} ${vh}`);
+
+            origSvg.querySelectorAll('style').forEach(s => scaledSvg.appendChild(s.cloneNode(true)));
+            Array.from(origSvg.childNodes).forEach(node => {
+                if (node.nodeName.toLowerCase() === 'style') return;
+                scaledSvg.appendChild(node.cloneNode(true));
+            });
+
+            scaledSvg.style.position = 'absolute';
+            scaledSvg.style.left = '-9999px';
+            document.body.appendChild(scaledSvg);
+
+            await svg2pdf(scaledSvg, doc, {
                 x: cx,
                 y: cy,
                 width: scaledW,
                 height: scaledH
             });
 
+            document.body.removeChild(scaledSvg);
             document.body.removeChild(origSvg);
             doc.save(fileName);
         }
