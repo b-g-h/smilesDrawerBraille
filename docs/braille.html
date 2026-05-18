@@ -376,15 +376,17 @@ async function downloadSVG(svgId, fileName) {
     sub.textContent = currentSmiles || '';
     page.appendChild(sub);
 
-    // Original-Grafik unverändert als nested SVG, horizontal zentriert
+    // Original-Grafik als nested SVG, horizontal zentriert, um Faktor 2 vergrößert
     const contentY = 160;
-    const cx = (pageW - origW) / 2;
+    const scaledW = origW * 2;
+    const scaledH = origH * 2;
+    const cx = (pageW - scaledW) / 2;
 
     const nested = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     nested.setAttribute('x', cx);
     nested.setAttribute('y', contentY);
-    nested.setAttribute('width', origW);
-    nested.setAttribute('height', origH);
+    nested.setAttribute('width', scaledW);
+    nested.setAttribute('height', scaledH);
     nested.setAttribute('viewBox', `${vx} ${vy} ${vw} ${vh}`);
 
     // Kinder kopieren (Style überspringen, ist schon oben)
