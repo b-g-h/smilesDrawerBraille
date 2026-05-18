@@ -261,14 +261,18 @@ export default class BrailleSvgWrapper extends SvgWrapper {
         let width = this.maxX - this.minX;
         let height = this.maxY - this.minY;
 
-        if (width > height) {
-            let diff = width - height;
-            height = width;
-            y -= diff / 2.0;
-        } else {
-            let diff = height - width;
-            width = height;
-            x -= diff / 2.0;
+        // A5 Querformat-Seitenverhältnis erzwingen (210 × 148 mm ≈ 794 × 560 px @ 96 DPI)
+        const targetRatio = 794 / 560;
+        const currentRatio = width / height;
+
+        if (currentRatio < targetRatio) {
+            const newWidth = height * targetRatio;
+            x -= (newWidth - width) / 2.0;
+            width = newWidth;
+        } else if (currentRatio > targetRatio) {
+            const newHeight = width / targetRatio;
+            y -= (newHeight - height) / 2.0;
+            height = newHeight;
         }
 
         this.svg.setAttributeNS(null, 'viewBox', `${x} ${y} ${width} ${height}`);

@@ -8288,6 +8288,34 @@
       this.rotateDrawing();
     }
     /**
+     * Inverts an E/Z bond marker; leaves other bonds unchanged.
+     *
+     * @param {?string} bond - The bond marker to invert.
+     * @returns The bond marker, inverted if it was an E/Z bond.
+     */
+    static flipEZ(bond) {
+      if (bond === "/") return "\\";
+      if (bond === "\\") return "/";
+      return bond;
+    }
+    /**
+     * Gets the bond type of a ringbond given the bond markers at either end.
+     *
+     * This is necessary because some code elsewhere (Graph?) sets these markers
+     * to '-' if they aren't specified.  This returns the first bond that differs
+     * from the default.  It flips E/Z specification of the reverse bond (if any)
+     * to make sure the stereochemistry is correct.
+     *
+     * @param {?string} fwd - The forward bond marker.
+     * @param {?string} rev - The reverse bond marker.
+     * @returns A bond marker, with correct E/Z stereochemistry.
+     */
+    static getRingbondType(fwd, rev) {
+      if (fwd && fwd !== "-") return fwd;
+      if (rev && rev !== "-") return _DrawerBase.flipEZ(rev);
+      return "-";
+    }
+    /**
      * Initializes rings and ringbonds for the current molecule.
      */
     initRings() {
@@ -8307,7 +8335,7 @@
             let targetVertexId = openBonds.get(ringbondId)[0];
             let targetRingbondBond = openBonds.get(ringbondId)[1];
             let edge = new Edge(sourceVertexId, targetVertexId, 1);
-            edge.setBondType(targetRingbondBond || ringbondBond || "-");
+            edge.setBondType(_DrawerBase.getRingbondType(ringbondBond, targetRingbondBond));
             let edgeId = this.graph.addEdge(edge);
             let targetVertex = this.graph.vertices[targetVertexId];
             vertex.addRingbondChild(targetVertexId, j);
@@ -14136,14 +14164,16 @@
       let y = this.minY;
       let width = this.maxX - this.minX;
       let height = this.maxY - this.minY;
-      if (width > height) {
-        let diff = width - height;
-        height = width;
-        y -= diff / 2;
-      } else {
-        let diff = height - width;
-        width = height;
-        x -= diff / 2;
+      const targetRatio = 794 / 560;
+      const currentRatio = width / height;
+      if (currentRatio < targetRatio) {
+        const newWidth = height * targetRatio;
+        x -= (newWidth - width) / 2;
+        width = newWidth;
+      } else if (currentRatio > targetRatio) {
+        const newHeight = width / targetRatio;
+        y -= (newHeight - height) / 2;
+        height = newHeight;
       }
       this.svg.setAttributeNS(null, "viewBox", `${x} ${y} ${width} ${height}`);
       this.svg.setAttributeNS(null, "width", width);
