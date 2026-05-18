@@ -451,7 +451,7 @@ async function downloadSVG(svgId, fileName) {
             const scaledW = origW * 2 * pxToMm;
             const scaledH = origH * 2 * pxToMm;
             const pageW_mm = 297;
-            const cx = (pageW_mm - scaledW) / 2;
+            let cx = (pageW_mm - scaledW) / 2;
             const cy = 45; // mm, unter Titel/Unterzeile
 
             // 5. Titel vektoriell (Braille, Euro850, 24pt)
@@ -487,7 +487,7 @@ async function downloadSVG(svgId, fileName) {
             // 2×-Skalierung in mm: viewBox-Einheiten × 2 × pxToMm
             const pdfW = vw * 2 * pxToMm;
             const pdfH = vh * 2 * pxToMm;
-            const cx = (pageW_mm - pdfW) / 2;
+            cx = (pageW_mm - pdfW) / 2;
 
             await svg2pdf(scaledSvg, doc, {
                 x: cx,
