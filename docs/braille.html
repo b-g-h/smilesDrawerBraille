@@ -463,11 +463,16 @@ async function downloadSVG(svgId, fileName) {
             doc.setTextColor(204, 204, 204);
             doc.text(currentSmiles || '', 10, 30);
 
-            // 7. Temporäres SVG mit Original-maßstäblichen width/height
+            // 7. Temporäres SVG mit width/height in mm (pdfW/pdfH), damit svg2pdf
+            //    die ViewBox-Transformation korrekt berechnet, egal ob es
+            //    parameters.width oder das Attribut verwendet.
+            const pdfW = origW * 2 * pxToMm;
+            const pdfH = origH * 2 * pxToMm;
+
             const scaledSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
             scaledSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-            scaledSvg.setAttribute('width', origW);
-            scaledSvg.setAttribute('height', origH);
+            scaledSvg.setAttribute('width', pdfW);
+            scaledSvg.setAttribute('height', pdfH);
             scaledSvg.setAttribute('viewBox', `${vx} ${vy} ${vw} ${vh}`);
 
             origSvg.querySelectorAll('style').forEach(s => scaledSvg.appendChild(s.cloneNode(true)));
@@ -508,9 +513,6 @@ async function downloadSVG(svgId, fileName) {
                 }
             });
 
-            // 2×-Skalierung in mm
-            const pdfW = origW * 2 * pxToMm;
-            const pdfH = origH * 2 * pxToMm;
             const cx = (pageW_mm - pdfW) / 2;
 
             await svg2pdf(scaledSvg, doc, {
