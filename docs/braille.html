@@ -30,6 +30,9 @@
             border-radius: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             margin-bottom: 1.5rem;
+            border-width: 2px;
+            border-style: solid;
+            border-color: #333;
         }
 
         .controls label {
@@ -95,7 +98,7 @@
             height: auto;
             max-width: 100%;
             background: #fff;
-            border: 1px solid #e0e0e0;
+            border: 2px solid #e0e0e0;
             border-radius: 4px;
         }
 
@@ -104,19 +107,36 @@
         }
 
         .toggle button {
-            padding: 0.4rem 0.8rem;
-            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
             cursor: pointer;
-            border: 1px solid #ccc;
-            background: #fafafa;
-            border-radius: 4px;
+            gap: .5rem;
+            border-radius: .375rem;
+            border-width: 2px;
+            border-color: rgb(157 212 192 / 0.4);
+            background-color: rgb(157 212 192 / 0.8);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: rgb(10 10 10 / 0.9);
+            padding: 0.8rem;
+            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+            transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+            transition-duration: .15s;
         }
 
-        .toggle button.active {
+        .toggle button:active {
             background: #333;
             color: #fff;
             border-color: #333;
         }
+        .toggle button:hover {
+            background: #333;
+            color: #fff;
+            border-color: #333;
+        }
+
 
         /* Barrierefreiheit: Beschreibungs-Overlay */
         .sr-live {
@@ -157,10 +177,14 @@
             font-size: 0.8rem;
             color: #666;
         }
+        p {
+            color: #333;
+        }
+        
     </style>
 </head>
 <body>
-    <h1>⚟️ SmilesDrawer Braille - erster Prototyp</h1>
+    <h1>⚟️ SmilesDrawer Braille</h1>
 
     <div class="controls">
         <label for="smiles-input">SMILES-String</label>
@@ -173,12 +197,12 @@
 
     <div class="gallery">
         <div class="card">
-            <h3>Braille (Euro850, 24 pt, rein schwarz)</h3>
+            <h3>Brailleansicht</h3>
             <div class="smiles" id="smiles-label-braille">CC(=O)Oc1ccccc1C(=O)O</div>
             <svg id="output-braille"></svg>
             <div class="toggle" style="margin-top: 0.5rem;">
-                <button onclick="downloadSVG('output-braille', 'braille.svg')" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">SVG Download</button>
-                <button onclick="downloadPDF('output-braille', 'braille.pdf')" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; margin-left: 0.3rem;">PDF Download (A4 Quer)</button>
+                <button onclick="downloadSVG('output-braille', 'braille.svg')">SVG Download</button>
+                <button onclick="downloadPDF('output-braille', 'braille.pdf')">PDF Download (A4 Quer)</button>
             </div>
             <div id="description-panel" class="description-panel" role="region" aria-live="polite" aria-label="Molekülbeschreibung">
                 <h2>Beschreibung der Struktur</h2>
@@ -188,11 +212,11 @@
         </div>
 
         <div class="card">
-            <h3>Kontrolle (Standardfont, 24 pt, rein schwarz)</h3>
+            <h3>Kontrollansicht</h3>
             <div class="smiles" id="smiles-label-control">CC(=O)Oc1ccccc1C(=O)O</div>
             <svg id="output-control"></svg>
             <div class="toggle" style="margin-top: 0.5rem;">
-                <button onclick="downloadSVG('output-control', 'control.svg')" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">SVG Download</button>
+                <button onclick="downloadSVG('output-control', 'control.svg')">SVG Download</button>
             </div>
         </div>
     </div>
