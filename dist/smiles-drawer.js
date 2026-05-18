@@ -14164,6 +14164,11 @@
       let y = this.minY;
       let width = this.maxX - this.minX;
       let height = this.maxY - this.minY;
+      const padding = this._bboxMeasured ? this.opts.padding || 0 : 0;
+      x -= padding;
+      y -= padding;
+      width += 2 * padding;
+      height += 2 * padding;
       const targetRatio = 794 / 560;
       const currentRatio = width / height;
       if (currentRatio < targetRatio) {
@@ -14209,7 +14214,6 @@
       paths.setAttributeNS(null, "aria-label", "Bindungen");
       vertices.setAttributeNS(null, "role", "group");
       vertices.setAttributeNS(null, "aria-label", "Atome und Elemente");
-      this.updateViewbox(this.opts.scale);
       if (this.svg) {
         this.svg.appendChild(defs);
         this.svg.appendChild(background);
@@ -14223,6 +14227,20 @@
         this.container.appendChild(vertices);
         return this.container;
       }
+      let measured = false;
+      if (this.svg && typeof this.svg.getBBox === "function") {
+        try {
+          const bbox = this.svg.getBBox();
+          this.minX = bbox.x;
+          this.minY = bbox.y;
+          this.maxX = bbox.x + bbox.width;
+          this.maxY = bbox.y + bbox.height;
+          measured = true;
+        } catch (e) {
+        }
+      }
+      this._bboxMeasured = measured;
+      this.updateViewbox(this.opts.scale);
     }
     /**
      * Ringe schwarz zeichnen (Original nutzt themeManager.getColor('C')).
@@ -14457,8 +14475,8 @@
     constructor(options, clear = true) {
       const brailleDefaults = {
         fontFamily: "'Euro850', 'Euro-850', Arial, sans-serif",
-        fontSizeLarge: 24,
-        fontSizeSmall: 24,
+        fontSizeLarge: 12,
+        fontSizeSmall: 12,
         bondThickness: 2,
         bondLength: 45,
         bondSpacing: 12,

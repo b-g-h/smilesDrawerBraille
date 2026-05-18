@@ -260,6 +260,11 @@ export default class BrailleSvgWrapper extends SvgWrapper {
         let y = this.minY;
         let width = this.maxX - this.minX;
         let height = this.maxY - this.minY;
+        const padding = this._bboxMeasured ? (this.opts.padding || 0) : 0;
+            x -= padding;
+            y -= padding;
+            width += 2 * padding;
+            height += 2 * padding;
 
         // A5 Querformat-Seitenverhältnis erzwingen (210 × 148 mm ≈ 794 × 560 px @ 96 DPI)
         const targetRatio = 794 / 560;
@@ -320,7 +325,7 @@ export default class BrailleSvgWrapper extends SvgWrapper {
         vertices.setAttributeNS(null, 'role', 'group');
         vertices.setAttributeNS(null, 'aria-label', 'Atome und Elemente');
 
-        this.updateViewbox(this.opts.scale);
+        //this.updateViewbox(this.opts.scale);
 
         if (this.svg) {
             this.svg.appendChild(defs);
@@ -335,6 +340,22 @@ export default class BrailleSvgWrapper extends SvgWrapper {
             this.container.appendChild(vertices);
             return this.container;
         }
+        // NEU: Nach dem DOM-Einhang die tatsächliche Bounding Box messen
+        let measured = false;
+        if (this.svg && typeof this.svg.getBBox === 'function') {
+            try {
+            const bbox = this.svg.getBBox();
+            this.minX = bbox.x;
+            this.minY = bbox.y;
+            this.maxX = bbox.x + bbox.width;
+            this.maxY = bbox.y + bbox.height;
+            measured = true;
+        } catch (e) {
+            // Fallback: geschätzte Werte aus determineDimensions/write beibehalten
+        }
+    }
+    this._bboxMeasured = measured;
+    this.updateViewbox(this.opts.scale);
     }
 
     /**

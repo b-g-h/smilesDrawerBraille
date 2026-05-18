@@ -219,6 +219,7 @@
         const svgBraille = document.getElementById('output-braille');
         const labelControl = document.getElementById('smiles-label-control');
         const svgControl = document.getElementById('output-control');
+        let currentSmiles = '';
 
         // Braille-Drawer – DIN A5 Querformat bei 96 DPI (210×148 mm)
         const brailleDrawer = new SmilesDrawer.BrailleSvgDrawer({
@@ -256,6 +257,7 @@
         }
 
         function draw(smiles) {
+            currentSmiles = smiles;
             try {
                 SmilesDrawer.parse(smiles, tree => {
                     // Braille
@@ -320,17 +322,90 @@
             return svgData;
         }
 
-        async function downloadSVG(svgId, fileName) {
-            const svgData = await getSVGWithEmbeddedFont(svgId);
-            const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
-            const svgUrl = URL.createObjectURL(svgBlob);
-            const downloadLink = document.createElement('a');
-            downloadLink.href = svgUrl;
-            downloadLink.download = fileName;
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
-        }
+async function downloadSVG(svgId, fileName) {
+    const svgData = await getSVGWithEmbeddedFont(svgId);
+    const parser = new DOMParser();
+    const origDoc = parser.parseFromString(svgData, 'image/svg+xml');
+    const origSvg = origDoc.documentElement;
+
+    // Originale Maße auslesen
+    const vb = origSvg.getAttribute('viewBox') || `0 0 ${origSvg.getAttribute('width') || 500} ${origSvg.getAttribute('height') || 500}`;
+    const [vx, vy, vw, vh] = vb.split(/\s+/).map(Number);
+    const origW = parseFloat(origSvg.getAttribute('width') || vw);
+    const origH = parseFloat(origSvg.getAttribute('height') || vh);
+
+    // A4 Querformat @ 96 DPI
+    const pageW = 1122;
+    const pageH = 794;
+
+    const page = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    page.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    page.setAttribute('viewBox', `0 0 ${pageW} ${pageH}`);
+    page.setAttribute('width', pageW);
+    page.setAttribute('height', pageH);
+
+    // Weißer Hintergrund
+    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bg.setAttribute('width', pageW);
+    bg.setAttribute('height', pageH);
+    bg.setAttribute('fill', '#ffffff');
+    page.appendChild(bg);
+
+    // Font-Styles aus dem Original ins Page-SVG kopieren
+    origSvg.querySelectorAll('style').forEach(s => page.appendChild(s.cloneNode(true)));
+
+    // Braille-Titel (schwarz, 24pt)
+    const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    title.setAttribute('x', 40);
+    title.setAttribute('y', 80);
+    title.setAttribute('text-anchor', 'left');
+    title.setAttribute('font-family', "'Euro850', 'Euro-850', Arial, sans-serif");
+    title.setAttribute('font-size', '24pt');
+    title.setAttribute('fill', '#000000');
+    title.textContent = currentSmiles || '';
+    page.appendChild(title);
+
+    // Graue Unterzeile (Arial, 14pt)
+    const sub = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    sub.setAttribute('x', 40);
+    sub.setAttribute('y', 120);
+    sub.setAttribute('text-anchor', 'left');
+    sub.setAttribute('font-family', 'Arial, Helvetica, sans-serif');
+    sub.setAttribute('font-size', '14pt');
+    sub.setAttribute('fill', '#cccccc');
+    sub.textContent = currentSmiles || '';
+    page.appendChild(sub);
+
+    // Original-Grafik unverändert als nested SVG, horizontal zentriert
+    const contentY = 160;
+    const cx = (pageW - origW) / 2;
+
+    const nested = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    nested.setAttribute('x', cx);
+    nested.setAttribute('y', contentY);
+    nested.setAttribute('width', origW);
+    nested.setAttribute('height', origH);
+    nested.setAttribute('viewBox', `${vx} ${vy} ${vw} ${vh}`);
+
+    // Kinder kopieren (Style überspringen, ist schon oben)
+    Array.from(origSvg.childNodes).forEach(node => {
+        if (node.nodeName.toLowerCase() === 'style') return;
+        nested.appendChild(node.cloneNode(true));
+    });
+
+    page.appendChild(nested);
+
+    const out = new XMLSerializer().serializeToString(page);
+    const blob = new Blob([out], {type: 'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
 
         async function downloadPDF(svgId, fileName) {
             const { jsPDF } = window.jspdf;

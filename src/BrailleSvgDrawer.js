@@ -19,8 +19,8 @@ export default class BrailleSvgDrawer extends SvgDrawer {
         // Sicherstellen, dass Braille-Defaults angewendet werden
         const brailleDefaults = {
             fontFamily: "'Euro850', 'Euro-850', Arial, sans-serif",
-            fontSizeLarge: 24,
-            fontSizeSmall: 24,
+            fontSizeLarge: 12,
+            fontSizeSmall: 12,
             bondThickness: 2.0,
             bondLength: 45,
             bondSpacing: 12,
