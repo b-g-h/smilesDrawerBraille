@@ -412,97 +412,69 @@ async function downloadSVG(svgId, fileName) {
         async function downloadPDF(svgId, fileName) {
             const { jsPDF } = window.jspdf;
 
-            // 1. Seiten-SVG exakt wie bei downloadSVG aufbauen
+            // 1. Euro850-Font in jsPDF registrieren
+            const fontResponse = await fetch('./fonts/Euro850.ttf');
+            const fontBlob = await fontResponse.blob();
+            const fontBase64 = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                reader.readAsDataURL(fontBlob);
+            });
+
+            // 2. jsPDF A4 Quer initialisieren
+            const doc = new jsPDF('l', 'mm', 'a4');
+            doc.addFileToVFS('Euro850.ttf', fontBase64);
+            doc.addFont('Euro850.ttf', 'Euro850', 'normal');
+
+            // 3. Molekül-SVG mit eingebettetem Font erzeugen und in DOM einhängen
             const svgData = await getSVGWithEmbeddedFont(svgId);
             const parser = new DOMParser();
             const origDoc = parser.parseFromString(svgData, 'image/svg+xml');
             const origSvg = origDoc.documentElement;
 
+            origSvg.style.position = 'absolute';
+            origSvg.style.left = '-9999px';
+            origSvg.style.top = '0';
+            document.body.appendChild(origSvg);
+
+            // Font laden abwarten, damit getComputedStyle den richtigen Font zurückgibt
+            await document.fonts.load('24pt Euro850');
+            await document.fonts.load('12pt Euro850');
+
+            // 4. Maße
             const vb = origSvg.getAttribute('viewBox') || `0 0 ${origSvg.getAttribute('width') || 500} ${origSvg.getAttribute('height') || 500}`;
             const [vx, vy, vw, vh] = vb.split(/\s+/).map(Number);
             const origW = parseFloat(origSvg.getAttribute('width') || vw);
             const origH = parseFloat(origSvg.getAttribute('height') || vh);
 
-            const pageW = 1122;
-            const pageH = 794;
+            const pxToMm = 25.4 / 96;
+            const scaledW = origW * 2 * pxToMm;
+            const scaledH = origH * 2 * pxToMm;
+            const pageW_mm = 297;
+            const cx = (pageW_mm - scaledW) / 2;
+            const cy = 45; // mm, unter Titel/Unterzeile
 
-            const page = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            page.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-            page.setAttribute('viewBox', `0 0 ${pageW} ${pageH}`);
-            page.setAttribute('width', pageW);
-            page.setAttribute('height', pageH);
+            // 5. Titel vektoriell (Braille, Euro850, 24pt)
+            doc.setFont('Euro850');
+            doc.setFontSize(24);
+            doc.setTextColor(0, 0, 0);
+            doc.text(currentSmiles || '', 10, 20);
 
-            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            bg.setAttribute('width', pageW);
-            bg.setAttribute('height', pageH);
-            bg.setAttribute('fill', '#ffffff');
-            page.appendChild(bg);
+            // 6. Unterzeile vektoriell (Helvetica/Arial, 14pt, grau)
+            doc.setFont('Helvetica');
+            doc.setFontSize(14);
+            doc.setTextColor(204, 204, 204);
+            doc.text(currentSmiles || '', 10, 30);
 
-            origSvg.querySelectorAll('style').forEach(s => page.appendChild(s.cloneNode(true)));
-
-            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            title.setAttribute('x', 40);
-            title.setAttribute('y', 80);
-            title.setAttribute('text-anchor', 'left');
-            title.setAttribute('font-family', "'Euro850', 'Euro-850', Arial, sans-serif");
-            title.setAttribute('font-size', '24pt');
-            title.setAttribute('fill', '#000000');
-            title.textContent = currentSmiles || '';
-            page.appendChild(title);
-
-            const sub = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            sub.setAttribute('x', 40);
-            sub.setAttribute('y', 120);
-            sub.setAttribute('text-anchor', 'left');
-            sub.setAttribute('font-family', 'Arial, Helvetica, sans-serif');
-            sub.setAttribute('font-size', '14pt');
-            sub.setAttribute('fill', '#cccccc');
-            sub.textContent = currentSmiles || '';
-            page.appendChild(sub);
-
-            const contentY = 160;
-            const scaledW = origW * 2;
-            const scaledH = origH * 2;
-            const cx = (pageW - scaledW) / 2;
-
-            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-            g.setAttribute('transform', `translate(${cx}, ${contentY}) scale(2) translate(${-vx}, ${-vy})`);
-
-            Array.from(origSvg.childNodes).forEach(node => {
-                if (node.nodeName.toLowerCase() === 'style') return;
-                g.appendChild(node.cloneNode(true));
+            // 7. Molekül als Vektor ins PDF rendern (2x skaliert, zentriert)
+            await svg2pdf(origSvg, doc, {
+                x: cx,
+                y: cy,
+                width: scaledW,
+                height: scaledH
             });
 
-            page.appendChild(g);
-
-            // 2. SVG serialisieren und als Bild laden
-            const out = new XMLSerializer().serializeToString(page);
-            const blob = new Blob([out], {type: 'image/svg+xml;charset=utf-8'});
-            const url = URL.createObjectURL(blob);
-
-            const img = new Image();
-            img.src = url;
-            await new Promise((resolve, reject) => {
-                img.onload = resolve;
-                img.onerror = reject;
-            });
-
-            // 3. Auf Canvas mit hoher Auflösung zeichnen (300 DPI ≈ 3.125x @ 96 DPI)
-            const dpiScale = 300 / 96;
-            const canvas = document.createElement('canvas');
-            canvas.width = Math.round(pageW * dpiScale);
-            canvas.height = Math.round(pageH * dpiScale);
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-            URL.revokeObjectURL(url);
-
-            // 4. Als Bild in A4-Quer-PDF einfügen
-            const doc = new jsPDF('l', 'mm', 'a4');
-            const imgData = canvas.toDataURL('image/png');
-            doc.addImage(imgData, 'PNG', 0, 0, 297, 210);
+            document.body.removeChild(origSvg);
             doc.save(fileName);
         }
 
