@@ -859,7 +859,7 @@ async function downloadSVG(svgId, fileName) {
                         {
                             role: 'user',
                             content: [
-                                { type: 'text', text: 'Identify the chemical molecule in this image. Step 1: Determine the SMILES representation. Step 2: Critically verify your answer by re-examining the image — check ring count, functional groups, heteroatoms, and stereochemistry. Step 3: If your first attempt was incorrect, correct it. Return ONLY the final verified SMILES string. No explanation, no markdown, just the raw SMILES code.' },
+                                { type: 'text', text: 'You are a chemical structure recognition system. Identify the molecule in this image through this internal process: first determine the SMILES, then critically re-examine the image to verify ring count, functional groups, heteroatoms, and stereochemistry, and silently correct any mistakes. You must output ONLY the final SMILES string. Do NOT output thinking steps, reasoning, verification text, explanations, or markdown. Output the raw SMILES code alone, for example: CC(=O)Oc1ccccc1C(=O)O' },
                                 { type: 'image_url', image_url: { url: imageToSend } }
                             ]
                         }
