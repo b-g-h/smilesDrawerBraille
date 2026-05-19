@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemische Strukturen in Braille (Euro850)</title>
+    <script src="https://unpkg.com/smiles-drawer@latest/dist/smiles-drawer.min.js"></script>
+    <style>
+        @font-face {
+            font-family: 'Euro850';
+            src: url('../assets/Euro850.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 500px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .output-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        #braille-output {
+            font-family: 'Euro850', monospace;
+            font-size: 24pt;
+            color: black;
+            line-height: 1;
+            white-space: pre;
+            background-color: white;
+            padding: 40px;
+            border: 1px solid #ddd;
+            display: inline-block;
+            min-width: 300px;
+            min-height: 300px;
+            word-break: break-all;
+        }
+        #svg-container {
+            background-color: white;
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        .info {
+            margin-top: 10px;
+            font-size: 0.8em;
+            color: #666;
+        }
+    </style>
+            gap: 20px;
+        }
+        #braille-output {
+            font-family: 'Euro850', monospace;
+            font-size: 24pt;
+            color: black;
+            line-height: 1;
+            white-space: pre;
+            background-color: white;
+            padding: 40px;
+            border: 1px solid #ddd;
+            display: inline-block;
+            min-width: 300px;
+            min-height: 300px;
+            word-break: break-all;
+        }
+        #svg-container {
+            background-color: white;
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        .info {
+            margin-top: 10px;
+            font-size: 0.8em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <h3>Molekül zu Braille</h3>
+        <label for="smiles-input">SMILES String eingeben:</label>
+        <input type="text" id="smiles-input" placeholder="z.B. C1CCCCC1" value="C1CCCCC1">
+        <div class="info">Die Struktur wird in Braille-Unicode-Zeichen gerastert.</div>
+    </div>
+    <div id="braille-output"></div>
+
+    <script>
+        const smilesInput = document.getElementById('smiles-input');
+        const output = document.getElementById('braille-output');
+
+        function smilesToBraille(smiles) {
+            try {
+                const sd = new smilesDrawer.Drawer({ width: 500, height: 500 });
+                const molecule = sd.parse(smiles);
+                if (!molecule) return "Error: Parsing failed";
+
+                let rows = 15;
+                let cols = 25;
+                let grid = Array.from({ length: rows }, () => Array(cols).fill(0x2800));
+
+                // Simple simulation of atoms as Braille points
+                molecule.atoms.forEach(atom => {
+                    let xIdx = Math.floor(Math.abs(atom.x * 5) % cols);
+                    let yIdx = Math.floor(Math.abs(atom.y * 5) % rows);
+                    if(yIdx >= 0 && yIdx < rows && xIdx >= 0 && xIdx < cols) {
+                        grid[yIdx][xIdx] |= (1 << Math.floor(Math.random() * 8));
+                    }
+                });
+
+                let result = "";
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        result += String.fromCharCode(grid[r][c]);
+                    }
+                    result += "\n";
+                }
+                return result;
+            } catch (e) {
+                return "Error: " + e.message;
+            }
+        }
+
+        function update() {
+            const smiles = smilesInput.value;
+            if (smiles) {
+                output.textContent = smilesToBraille(smiles);
+            }
+        }
+
+        smilesInput.addEventListener('input', update);
+        window.onload = update;
+    </script>
+</body>
+</html>
