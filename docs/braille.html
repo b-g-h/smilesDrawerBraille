@@ -754,26 +754,47 @@ async function downloadSVG(svgId, fileName) {
                 const data = await res.json();
                 console.log('OpenWebUI /api/models response:', data);
 
-                // OpenWebUI liefert Modelle unter verschiedenen Keys
-                let models = data.data || data.models || (Array.isArray(data) ? data : []);
-
-                // Manchmal sind die Modelle verschachtelt in { data: { models: [...] } }
-                if (!Array.isArray(models) && data.data && data.data.models) {
-                    models = data.data.models;
+                // OpenWebUI liefert Modelle unter verschiedenen verschachtelten Keys
+                let models = null;
+                const candidates = [
+                    data.data?.models,      // { data: { models: [...] } }
+                    data.data,               // { data: [...] }
+                    data.models,             // { models: [...] }
+                    Array.isArray(data) ? data : null  // [...] direkt
+                ];
+                for (const c of candidates) {
+                    if (Array.isArray(c) && c.length > 0) {
+                        models = c;
+                        break;
+                    }
                 }
-                if (!Array.isArray(models) && data.data) {
-                    models = data.data;
+
+                // Letzter Versuch: rekursiv nach Array mit id/name durchsuchen
+                if (!models) {
+                    function findModelArray(obj, depth = 0) {
+                        if (depth > 5 || !obj || typeof obj !== 'object') return null;
+                        if (Array.isArray(obj) && obj.length > 0 && (obj[0].id || obj[0].name || obj[0].model)) {
+                            return obj;
+                        }
+                        for (const v of Object.values(obj)) {
+                            const found = findModelArray(v, depth + 1);
+                            if (found) return found;
+                        }
+                        return null;
+                    }
+                    models = findModelArray(data);
                 }
 
                 owuiModelSelect.innerHTML = '';
-                if (!Array.isArray(models) || models.length === 0) {
-                    scanStatus.textContent = 'Keine Modelle gefunden (Struktur: ' + JSON.stringify(Object.keys(data)).slice(0,80) + '...)';
+                if (!models || models.length === 0) {
+                    scanStatus.textContent = 'Keine Modelle gefunden (gelieferte Keys: ' + JSON.stringify(Object.keys(data)).slice(0,100) + '...)';
                     scanStatus.className = 'status error';
+                    console.error('Konnte kein Modell-Array finden in:', data);
                     return;
                 }
                 models.forEach(m => {
                     const opt = document.createElement('option');
-                    opt.value = m.id || m.model || m.name;
+                    opt.value = m.id || m.model || m.name || '';
                     opt.textContent = m.name || m.id || m.model || m.title || 'Unbekannt';
                     owuiModelSelect.appendChild(opt);
                 });
