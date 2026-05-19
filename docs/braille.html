@@ -833,19 +833,22 @@ async function downloadSVG(svgId, fileName) {
                 return;
             }
 
-            // Bildgröße prüfen (Base64 älter ~1.3x Originalgröße)
-            const approxSizeMB = (scanImageBase64.length * 0.75) / 1024 / 1024;
-            if (approxSizeMB > 10) {
-                scanStatus.textContent = 'Bild ist sehr groß (' + approxSizeMB.toFixed(1) + ' MB). Das kann zu Timeouts führen.';
-                scanStatus.className = 'status error';
-            }
-
             scanBtn.disabled = true;
-            scanStatus.textContent = 'Analyse läuft...';
+            scanStatus.textContent = 'Bild wird für Upload vorbereitet...';
             scanStatus.className = 'status';
 
+            // Bild vor dem Senden auf max 1024px verkleinern (JPEG, Qualität 0.85)
+            let imageToSend = scanImageBase64;
+            try {
+                imageToSend = await resizeImage(scanImageBase64, 1024, 0.85);
+                const newSizeMB = (imageToSend.length * 0.75) / 1024 / 1024;
+                scanStatus.textContent = `Bild optimiert (${newSizeMB.toFixed(1)} MB). Analyse läuft...`;
+            } catch (e) {
+                console.warn('Bild-Optimierung fehlgeschlagen, sende Original:', e);
+            }
+
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 Min Timeout
+            let timeoutId = setTimeout(() => controller.abort(), 60000); // 60s Timeout
 
             try {
                 const payload = {
@@ -855,13 +858,13 @@ async function downloadSVG(svgId, fileName) {
                             role: 'user',
                             content: [
                                 { type: 'text', text: 'Identify the chemical molecule in this image and return ONLY the SMILES string. No explanation, no markdown, just the raw SMILES code.' },
-                                { type: 'image_url', image_url: { url: scanImageBase64 } }
+                                { type: 'image_url', image_url: { url: imageToSend } }
                             ]
                         }
                     ]
                 };
                 console.log('Sending vision request to:', `${base}/api/chat/completions`);
-                console.log('Payload model:', model);
+                console.log('Payload model:', model, '| Bildgröße:', (imageToSend.length * 0.75 / 1024 / 1024).toFixed(2), 'MB');
 
                 const res = await fetch(`${base}/api/chat/completions`, {
                     method: 'POST',
@@ -885,7 +888,6 @@ async function downloadSVG(svgId, fileName) {
                 console.log('Response data:', data);
                 const smiles = data.choices?.[0]?.message?.content?.trim();
                 if (!smiles) throw new Error('Keine Antwort vom Modell');
-                // Sauberes SMILES extrahieren (entferne ``` etc.)
                 const cleanSmiles = smiles.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '').trim();
                 input.value = cleanSmiles;
                 draw(cleanSmiles);
@@ -894,7 +896,7 @@ async function downloadSVG(svgId, fileName) {
             } catch (err) {
                 clearTimeout(timeoutId);
                 if (err.name === 'AbortError') {
-                    scanStatus.textContent = 'Fehler: Zeitüberschreitung (120s). Das Bild ist möglicherweise zu groß oder der Server überlastet.';
+                    scanStatus.textContent = 'Fehler: Zeitüberschreitung (60s). Der Server antwortet nicht. Prüfe, ob das Modell Vision unterstützt und ob der Server läuft.';
                 } else if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
                     scanStatus.textContent = 'Netzwerk-/CORS-Fehler: Der POST-Request wurde blockiert. Prüfe die CORS-Einstellungen deines OpenWebUI-Servers (Admin Panel → Settings → CORS).';
                 } else {
@@ -905,6 +907,29 @@ async function downloadSVG(svgId, fileName) {
             } finally {
                 scanBtn.disabled = false;
             }
+        }
+
+        // Bild auf maxWidth verkleinern und als JPEG Base64 zurückgeben
+        function resizeImage(base64, maxWidth, quality) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    let w = img.width;
+                    let h = img.height;
+                    if (w > maxWidth) {
+                        h = Math.round(h * (maxWidth / w));
+                        w = maxWidth;
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    resolve(canvas.toDataURL('image/jpeg', quality));
+                };
+                img.onerror = reject;
+                img.src = base64;
+            });
         }
 
         // Initiales Zeichnen
