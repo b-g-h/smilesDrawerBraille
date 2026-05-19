@@ -180,7 +180,64 @@
         p {
             color: #333;
         }
-        
+
+        /* Scan to SMILES */
+        .scan-card {
+            grid-column: 1 / -1;
+        }
+        .scan-card input[type="password"],
+        .scan-card input[type="text"],
+        .scan-card select {
+            width: 100%;
+            padding: 0.5rem;
+            font-size: 1rem;
+            border: 2px solid #3e8572;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-bottom: 0.75rem;
+            background-color: hsla(158, 39%, 72%, 0.2);
+        }
+        .scan-card .api-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 0.75rem;
+        }
+        .scan-card .upload-zone {
+            border: 2px dashed #3e8572;
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-bottom: 0.75rem;
+            color: #555;
+        }
+        .scan-card .upload-zone:hover {
+            background-color: hsla(158, 39%, 72%, 0.15);
+        }
+        .scan-card .upload-zone.has-image {
+            border-style: solid;
+            background-color: hsla(158, 39%, 72%, 0.1);
+        }
+        .scan-card .preview {
+            max-width: 100%;
+            max-height: 200px;
+            margin-top: 0.5rem;
+            border-radius: 4px;
+            display: none;
+        }
+        .scan-card .preview.visible {
+            display: block;
+        }
+        .scan-card .status {
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            min-height: 1.2em;
+        }
+        .scan-card .status.error { color: #c44; }
+        .scan-card .status.success { color: #3e8572; }
+        .scan-card label { color: #333; }
+
     </style>
 </head>
 <body>
@@ -218,6 +275,44 @@
             <div class="toggle" style="margin-top: 0.5rem;">
                 <button onclick="downloadSVG('output-control', 'control.svg')">SVG Download</button>
             </div>
+        </div>
+
+        <div class="card scan-card">
+            <h3>Scan to SMILES</h3>
+            <p class="smiles" style="color:#888; font-size:0.8rem; margin-bottom:0.75rem;">
+                Molekül von Foto erkennen (OpenWebUI Vision)
+            </p>
+
+            <div class="api-row">
+                <div>
+                    <label style="display:block; font-weight:600; margin-bottom:0.25rem; font-size:0.9rem;">OpenWebUI URL</label>
+                    <input type="text" id="owui-url" value="http://localhost:8080" placeholder="http://localhost:8080">
+                </div>
+                <div>
+                    <label style="display:block; font-weight:600; margin-bottom:0.25rem; font-size:0.9rem;">API Key</label>
+                    <input type="password" id="owui-key" placeholder="sk-...">
+                </div>
+            </div>
+
+            <label style="display:block; font-weight:600; margin-bottom:0.25rem; font-size:0.9rem;">Modell</label>
+            <select id="owui-model">
+                <option value="">-- zuerst Modelle laden --</option>
+            </select>
+            <div class="toggle" style="margin-bottom:0.75rem;">
+                <button onclick="loadModels()">Modelle laden</button>
+            </div>
+
+            <div class="upload-zone" id="upload-zone" onclick="document.getElementById('scan-file').click()">
+                <div>📷 Foto aufnehmen oder Bild hochladen</div>
+                <div style="font-size:0.8rem; color:#888; margin-top:0.25rem;">Klicken oder Datei hierher ziehen</div>
+                <img id="scan-preview" class="preview" alt="Vorschau">
+            </div>
+            <input type="file" id="scan-file" accept="image/png,image/jpeg,image/jpg" capture="environment" style="display:none;">
+
+            <div class="toggle">
+                <button onclick="analyzeImage()" id="scan-btn">Molekül erkennen</button>
+            </div>
+            <div id="scan-status" class="status"></div>
         </div>
     </div>
 
@@ -589,6 +684,154 @@ async function downloadSVG(svgId, fileName) {
                 }
                 panel.classList.add('visible');
                 textEl.focus();
+            }
+        }
+
+        // --- Scan to SMILES (OpenWebUI Vision) ---
+        const owuiUrlInput = document.getElementById('owui-url');
+        const owuiKeyInput = document.getElementById('owui-key');
+        const owuiModelSelect = document.getElementById('owui-model');
+        const scanFileInput = document.getElementById('scan-file');
+        const scanPreview = document.getElementById('scan-preview');
+        const uploadZone = document.getElementById('upload-zone');
+        const scanStatus = document.getElementById('scan-status');
+        const scanBtn = document.getElementById('scan-btn');
+        let scanImageBase64 = null;
+
+        // Werte aus localStorage wiederherstellen
+        if (localStorage.getItem('owuiUrl')) owuiUrlInput.value = localStorage.getItem('owuiUrl');
+        if (localStorage.getItem('owuiKey')) owuiKeyInput.value = localStorage.getItem('owuiKey');
+
+        owuiUrlInput.addEventListener('change', () => localStorage.setItem('owuiUrl', owuiUrlInput.value));
+        owuiKeyInput.addEventListener('change', () => localStorage.setItem('owuiKey', owuiKeyInput.value));
+
+        // Drag & Drop
+        uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.style.background = 'hsla(158, 39%, 72%, 0.25)'; });
+        uploadZone.addEventListener('dragleave', () => { uploadZone.style.background = ''; });
+        uploadZone.addEventListener('drop', e => {
+            e.preventDefault();
+            uploadZone.style.background = '';
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+
+        scanFileInput.addEventListener('change', e => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                scanStatus.textContent = 'Bitte ein Bild (PNG/JPG) auswählen.';
+                scanStatus.className = 'status error';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = ev => {
+                scanImageBase64 = ev.target.result;
+                scanPreview.src = scanImageBase64;
+                scanPreview.classList.add('visible');
+                uploadZone.classList.add('has-image');
+                scanStatus.textContent = 'Bild geladen. Klicke "Molekül erkennen".';
+                scanStatus.className = 'status success';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function loadModels() {
+            const base = owuiUrlInput.value.replace(/\/$/, '');
+            const key = owuiKeyInput.value;
+            if (!key) {
+                scanStatus.textContent = 'Bitte API Key eingeben.';
+                scanStatus.className = 'status error';
+                return;
+            }
+            scanStatus.textContent = 'Lade Modelle...';
+            scanStatus.className = 'status';
+            try {
+                const res = await fetch(`${base}/api/models`, {
+                    headers: { 'Authorization': `Bearer ${key}` }
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                const models = data.data || data.models || data;
+                owuiModelSelect.innerHTML = '';
+                if (!Array.isArray(models) || models.length === 0) {
+                    scanStatus.textContent = 'Keine Modelle gefunden.';
+                    scanStatus.className = 'status error';
+                    return;
+                }
+                models.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.id || m.model || m.name;
+                    opt.textContent = m.name || m.id || m.model || m.title || 'Unbekannt';
+                    owuiModelSelect.appendChild(opt);
+                });
+                scanStatus.textContent = `${models.length} Modelle geladen.`;
+                scanStatus.className = 'status success';
+            } catch (err) {
+                scanStatus.textContent = 'Fehler beim Laden: ' + err.message;
+                scanStatus.className = 'status error';
+                console.error(err);
+            }
+        }
+
+        async function analyzeImage() {
+            const base = owuiUrlInput.value.replace(/\/$/, '');
+            const key = owuiKeyInput.value;
+            const model = owuiModelSelect.value;
+            if (!scanImageBase64) {
+                scanStatus.textContent = 'Bitte zuerst ein Bild hochladen.';
+                scanStatus.className = 'status error';
+                return;
+            }
+            if (!key) {
+                scanStatus.textContent = 'Bitte API Key eingeben.';
+                scanStatus.className = 'status error';
+                return;
+            }
+            if (!model) {
+                scanStatus.textContent = 'Bitte Modell auswählen.';
+                scanStatus.className = 'status error';
+                return;
+            }
+            scanBtn.disabled = true;
+            scanStatus.textContent = 'Analyse läuft...';
+            scanStatus.className = 'status';
+            try {
+                const res = await fetch(`${base}/api/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${key}`
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: [
+                            {
+                                role: 'user',
+                                content: [
+                                    { type: 'text', text: 'Identify the chemical molecule in this image and return ONLY the SMILES string. No explanation, no markdown, just the raw SMILES code.' },
+                                    { type: 'image_url', image_url: { url: scanImageBase64 } }
+                                ]
+                            }
+                        ]
+                    })
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                const smiles = data.choices?.[0]?.message?.content?.trim();
+                if (!smiles) throw new Error('Keine Antwort vom Modell');
+                // Sauberes SMILES extrahieren (entferne ``` etc.)
+                const cleanSmiles = smiles.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '').trim();
+                input.value = cleanSmiles;
+                draw(cleanSmiles);
+                scanStatus.textContent = `Erkannt: ${cleanSmiles}`;
+                scanStatus.className = 'status success';
+            } catch (err) {
+                scanStatus.textContent = 'Fehler: ' + err.message;
+                scanStatus.className = 'status error';
+                console.error(err);
+            } finally {
+                scanBtn.disabled = false;
             }
         }
 
