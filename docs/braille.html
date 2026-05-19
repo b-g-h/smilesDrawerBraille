@@ -219,11 +219,19 @@
         .scan-card .upload-zone.has-image {
             border-style: solid;
             background-color: hsla(158, 39%, 72%, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+        }
+        .scan-card .upload-zone.has-image .upload-hint {
+            display: none;
         }
         .scan-card .preview {
             max-width: 100%;
-            max-height: 200px;
-            margin-top: 0.5rem;
+            max-height: 300px;
+            margin: 0 auto;
             border-radius: 4px;
             display: none;
         }
@@ -307,8 +315,8 @@
             </div>
 
             <div class="upload-zone" id="upload-zone" onclick="document.getElementById('scan-file').click()">
-                <div>📷 Foto aufnehmen oder Bild hochladen</div>
-                <div style="font-size:0.8rem; color:#888; margin-top:0.25rem;">Klicken oder Datei hierher ziehen</div>
+                <div class="upload-hint">📷 Foto aufnehmen oder Bild hochladen</div>
+                <div class="upload-hint" style="font-size:0.8rem; color:#888; margin-top:0.25rem;">Klicken oder Datei hierher ziehen</div>
                 <img id="scan-preview" class="preview" alt="Vorschau">
             </div>
             <input type="file" id="scan-file" accept="image/png,image/jpeg,image/jpg" capture="environment" style="display:none;">
