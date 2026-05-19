@@ -92,6 +92,7 @@ export default class BrailleSvgDrawer extends SvgDrawer {
             target.prepend(title);
 
             let desc = document.createElementNS('http://www.w3.org/2000/svg', 'desc');
+            desc.setAttribute('xml:space', 'preserve');
 
             // Natürlichsprachliche Beschreibung
             let descText = '';

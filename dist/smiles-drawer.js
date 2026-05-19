@@ -14535,6 +14535,7 @@
         title.textContent = data.smiles || "Chemische Struktur";
         target.prepend(title);
         let desc = document.createElementNS("http://www.w3.org/2000/svg", "desc");
+        desc.setAttribute("xml:space", "preserve");
         let descText = "";
         try {
           const generator = new DescriptionGenerator(
