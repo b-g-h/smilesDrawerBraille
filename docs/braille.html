@@ -5,35 +5,103 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SmilesDrawer Braille – Prototyp</title>
     <style>
+        :root {
+            --bg-color: #e4e4de7d;
+            --text-color: #3e8572;
+            --card-bg: #ffffff;
+            --card-border: #333;
+            --input-bg: hsla(158, 39%, 72%, 0.2);
+            --input-border: #3e8572;
+            --hint-color: #666;
+            --button-bg: rgb(157 212 192 / 0.8);
+            --button-text: rgb(10 10 10 / 0.9);
+            --button-border: rgb(157 212 192 / 0.4);
+            --accent-color: #3e8572;
+            --svg-bg: #ffffff;
+            --svg-border: #e0e0e0;
+            --smiles-text: #888;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #a0d9ce;
+            --card-bg: #2d2d2d;
+            --card-border: #444;
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --input-border: #3e8572;
+            --hint-color: #aaa;
+            --button-bg: #3e8572;
+            --button-text: #ffffff;
+            --button-border: #3e8572;
+            --accent-color: #3e8572;
+            --svg-bg: #2d2d2d;
+            --svg-border: #444;
+            --smiles-text: #bbb;
+        }
+
+    <style>
+        :root {
+            --bg-color: #e4e4de7d;
+            --text-color: #3e8572;
+            --card-bg: #fff;
+            --card-border: #333;
+            --input-bg: hsla(158, 39%, 72%, 0.2);
+            --input-border: #3e8572;
+            --hint-color: #666;
+            --button-bg: rgb(157 212 192 / 0.8);
+            --button-text: rgb(10 10 10 / 0.9);
+            --button-border: rgb(157 212 192 / 0.4);
+            --accent-color: #3e8572;
+            --svg-bg: #fff;
+            --svg-border: #e0e0e0;
+            --smiles-text: #888;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #a0d9ce;
+            --card-bg: #2d2d2d;
+            --card-border: #444;
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --input-border: #3e8572;
+            --hint-color: #aaa;
+            --button-bg: #3e8572;
+            --button-text: #ffffff;
+            --button-border: #3e8572;
+            --accent-color: #3e8572;
+            --svg-bg: #2d2d2d;
+            --svg-border: #444;
+            --smiles-text: #bbb;
+        }
+
         @font-face {
             font-family: 'Euro850';
-            src: url('./fonts/Euro850.ttf') format('truetype');
+            src: url('./fonts/Euro8int850.ttf') format('truetype');
             font-weight: normal;
             font-style: normal;
         }
 
         body {
             font-family: system-ui, sans-serif;
-            background: #e4e4de7d;
+            background: var(--bg-color);
             margin: 0 auto;
             padding: 2rem;
             max-width: 1200px;
-            color: #3e8572;
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
         }
 
-        h1 {
-            margin-top: 0;
-        }
+        h1 { margin-top: 0; }
 
         .controls {
-            background: #fff;
+            background: var(--card-bg);
             padding: 1rem 1.5rem;
             border-radius: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             margin-bottom: 1.5rem;
             border-width: 2px;
             border-style: solid;
-            border-color: #333;
+            border-color: var(--card-border);
         }
 
         .controls label {
@@ -47,15 +115,15 @@
             width: 100%;
             padding: 0.5rem;
             font-size: 1.3rem;
-            border: 2px solid #3e8572;
-            background-color: hsla(158, 39%, 72%, 0.2   );
+            border: 2px solid var(--input-border);
+            background-for: var(--input-bg);
             border-radius: 4px;
             box-sizing: border-box;
         }
 
         .controls .hint {
             font-size: 0.85rem;
-            color: #666;
+            color: var(--hint-color);
             margin-top: 0.4rem;
         }
 
@@ -66,30 +134,24 @@
         }
 
         @media (min-width: 900px) {
-            .gallery {
-                grid-template-columns: repeat(2, 1fr);
-            }
+            .gallery { grid-template-columns: repeat(2, 1fr); }
         }
 
         .card {
-            background: #fff;
+            background: var(--card-bg);
             border-radius: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             padding: 1rem;
-            border-color:#444444;
-            border-style:solid;
+            border-color: var(--card-border);
+            border-style: solid;
             border-width: 2px;
         }
 
-        .card h3 {
-            margin: 0 0 0.5rem;
-            color: #555;
-        }
-
+        .card h3 { margin: 0 0 0.5rem; color: var(--text-color); }
         .card .smiles {
             font-family: monospace;
             font-size: 0.8rem;
-            color: #888;
+            color: var(--smiles-text);
             margin-bottom: 0.75rem;
             word-break: break-all;
         }
@@ -99,15 +161,12 @@
             width: 100%;
             height: auto;
             max-width: 100%;
-            background: #fff;
-            border: 2px solid #e0e0e0;
+            background: var(--svg-bg);
+            border: 2px solid var(--svg-border);
             border-radius: 4px;
         }
 
-        .toggle {
-            margin-top: 0.75rem;
-        }
-
+        .toggle { margin-top: 0:75rem; }
         .toggle button {
             display: inline-flex;
             align-items: center;
@@ -115,43 +174,23 @@
             gap: .5rem;
             border-radius: .375rem;
             border-width: 2px;
-            border-color: rgb(157 212 192 / 0.4);
-            background-color: rgb(157 212 192 / 0.8);
+            border-color: var(--button-border);
+            background-color: var(--button-bg);
             font-size: 12px;
             font-weight: 700;
             letter-spacing: .05em;
-            color: rgb(10 10 10 / 0.9);
+            color: var(--button-text);
             padding: 0.8rem;
             margin: 0.3em;
-            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
-            transition-timing-function: cubic-bezier(.4, 0, .2, 1);
-            transition-duration: .15s;
+            transition: all 0.15s ease;
         }
 
-        .toggle button:active {
-            background: #333;
-            color: #fff;
-            border-color: #333;
-        }
-        .toggle button:hover {
-            background: #333;
-            color: #fff;
-            border-color: #333;
-        }
-
-
-        /* Barrierefreiheit: Beschreibungs-Overlay */
-        .sr-live {
-            position: absolute;
-            left: -10000px;
-            width: 1px;
-            height: 1px;
-            overflow: hidden;
-        }
+        .toggle button:active { background: #333; color: #fff; border-color: #333; }
+        .toggle button:hover { opacity: 0.8; }
 
         .description-panel {
-            background: #fff;
-            border: 2px solid #333;
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
             border-radius: 8px;
             padding: 1.5rem;
             margin-top: 1rem;
@@ -159,103 +198,34 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
-
-        .description-panel h2 {
-            margin-top: 0;
-            font-size: 1.1rem;
+        .description-panel p { line-height: 1.6; margin: 0; white-space: pre-wrap; color: var(--text-color); }
+        .description-panel .kbd-hint { margin-top: 0.75rem; font-size: 0.8rem; color: var(--hint-color); }
+        
+        .scan-card { grid-column: 1 / -1; }
+        .scan-card input[type="text"], .scan-card input[type="password"], .scan-card select {
+            width: 100%; padding: 0.5rem; font-size: 1rem; border: 2px solid var(--input-border);
+            border-radius: 4px; box-sizing: border-box; margin-bottom: 0.75rem;
+            background-color: var(--input-bg); color: var(--text:color);
         }
 
-        .description-panel p {
-            line-height: 1.6;
-            margin: 0;
-            white-space: pre-wrap;
-        }
-
-        .description-panel .kbd-hint {
-            margin-top: 0.75rem;
-            font-size: 0.8rem;
-            color: #666;
-        }
-        p {
-            color: #333;
-        }
-
-        /* Scan to SMILES */
-        .scan-card {
-            grid-column: 1 / -1;
-        }
-        .scan-card input[type="password"],
-        .scan-card input[type="text"],
-        .scan-card select {
-            width: 100%;
-            padding: 0.5rem;
-            font-size: 1rem;
-            border: 2px solid #3e8572;
-            border-radius: 4px;
-            box-sizing: border-box;
-            margin-bottom: 0.75rem;
-            background-color: hsla(158, 39%, 72%, 0.2);
-        }
-        .scan-card .api-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 0.75rem;
-        }
         .scan-card .upload-zone {
-            border: 2px dashed #3e8572;
-            border-radius: 8px;
-            padding: 1.5rem;
-            text-align: center;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            margin-bottom: 0.75rem;
-            color: #555;
+            border: 2px dashed var(--input-border); border-radius: 8px; padding: 1.5rem;
+            text-align: center; cursor: pointer; transition: background-color 0.2s;
+            margin-bottom: 0.75rem; color: var(--text-color);
         }
-        .scan-card .upload-zone:hover {
-            background-color: hsla(158, 39%, 72%, 0.15);
-        }
+
+        .scan-card .upload-zone:hover { background-color: var(--input-bg); }
         .scan-card .upload-zone.has-image {
-            border-style: solid;
-            background-color: hsla(158, 39%, 72%, 0.1);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 200px;
+            border-style: solid; background-color: var(--input-bg);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px;
         }
-        .scan-card .upload-zone.has-image .upload-hint {
-            display: none;
-        }
-        .scan-card .preview {
-            max-width: 100%;
-            max-height: 300px;
-            margin: 0 auto;
-            border-radius: 4px;
-            display: none;
-        }
-        .scan-card .preview.visible {
-            display: block;
-        }
-        .scan-card .status {
-            font-size: 0.9rem;
-            margin-top: 0.5rem;
-            min-height: 1.2em;
-        }
-        .scan-card .status.error { color: #c44; }
-        .scan-card .status.success { color: #3e8572; }
-        .scan-card label { color: #333; }
 
+        .scan-card .status { font-size: 0.9rem; margin-top: 0.5rem; min-height: 1.2em; }
+        .scan-card .status.error { color: #ff6b6:b; }
+        .scan-card .status.success { color: var(--accent-color); }
+        .scan-card label { color: var(--text-color); }
     </style>
-</head>
-<body>
-    <h1> SmilesDrawer ⚟️ ⡃⠗⠁⠊⠇⠇⠑</h1>
 
-    <div class="controls">
-        <label for="smiles-input">SMILES-String</label>
-        <input id="smiles-input" type="text" value="CC(=O)Oc1ccccc1C(=O)O" placeholder="z. B. C1CCCCC1">
-        <p class="hint">
-            Voreingestellt: Aspirin. Drücke <kbd>Enter</kbd> oder klicke auf die Beispiele unten.
-        </p>
     </div>
 
     <div class="gallery">
