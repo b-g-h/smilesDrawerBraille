@@ -295,11 +295,13 @@
                 </div>
             </div>
 
-            <label for="owui-model" style="display:block; font-weight:600; margin-bottom:0.25rem; font-size:0.9rem;">Modell</label>
+            <label style="display:block; font-weight:600; margin-bottom:0.25rem; font-size:0.9rem;">Modell</label>
             <select id="owui-model">
                 <option value="">-- zuerst Modelle laden --</option>
             </select>
-            <input type="text" id="owui-model-manual" placeholder="z. B. gpt-4o, llava, claude-3-5-sonnet..." style="display:none; margin-top:0.5rem;">
+            <p style="font-size:0.75rem; color:#888; margin:0.25rem 0 0.5rem;">
+                ⚠️ Nur Vision-fähige Modelle können Bilder analysieren (z. B. GPT-4o, LLaVA, Qwen-VL).
+            </p>
             <div class="toggle" style="margin-bottom:0.75rem;">
                 <button onclick="loadModels()">Modelle laden</button>
             </div>
@@ -887,7 +889,14 @@ async function downloadSVG(svgId, fileName) {
                 const data = await res.json();
                 console.log('Response data:', data);
                 const smiles = data.choices?.[0]?.message?.content?.trim();
-                if (!smiles) throw new Error('Keine Antwort vom Modell');
+                if (!smiles) {
+                    // Prüfe, ob der Server einen expliziten Fehler zurückgegeben hat
+                    const errorMsg = data.error?.message || '';
+                    if (errorMsg.toLowerCase().includes('vision') || errorMsg.toLowerCase().includes('image')) {
+                        throw new Error('Dieses Modell unterstützt keine Bildanalyse. Bitte ein Vision-fähiges Modell wählen (z. B. GPT-4o, LLaVA).');
+                    }
+                    throw new Error('Keine Antwort vom Modell. Möglicherweise unterstützt das gewählte Modell keine Bildanalyse (Vision).');
+                }
                 const cleanSmiles = smiles.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '').trim();
                 input.value = cleanSmiles;
                 draw(cleanSmiles);
