@@ -92,17 +92,9 @@ export default class BrailleSvgDrawer extends SvgDrawer {
             target.prepend(title);
 
             let desc = document.createElementNS('http://www.w3.org/2000/svg', 'desc');
-            let vertexCount = preprocessor.graph.vertices.length;
-            let heteroAtoms = preprocessor.graph.vertices
-                .map(v => v.value.element)
-                .filter(e => e !== 'C' && e !== 'H');
-            let uniqueHetero = [...new Set(heteroAtoms)];
-            let descText = `Molekül mit ${vertexCount} sichtbaren Atomen.`;
-            if (uniqueHetero.length > 0) {
-                descText += ` Enthält: ${uniqueHetero.join(', ')}.`;
-            }
 
-            // Natürlichsprachliche Beschreibung hinzufügen
+            // Natürlichsprachliche Beschreibung
+            let descText = '';
             try {
                 const generator = new DescriptionGenerator(
                     preprocessor.graph,
@@ -112,7 +104,7 @@ export default class BrailleSvgDrawer extends SvgDrawer {
                 );
                 const naturalDesc = generator.generate();
                 if (naturalDesc) {
-                    descText += ' ' + naturalDesc;
+                    descText = naturalDesc;
                 }
             } catch (e) {
                 // Beschreibungsgenerator darf nicht den Draw-Vorgang blockieren

@@ -14315,7 +14315,7 @@
       parts.push(this._describeFunctionalGroups());
       parts.push(this._describeBonds());
       parts.push(this._describeStereo());
-      return parts.filter((p) => p).join(" ");
+      return parts.filter((p) => p).join("\n\n");
     }
     _describeComposition() {
       const vertices = this.graph.vertices;
@@ -14535,13 +14535,7 @@
         title.textContent = data.smiles || "Chemische Struktur";
         target.prepend(title);
         let desc = document.createElementNS("http://www.w3.org/2000/svg", "desc");
-        let vertexCount = preprocessor.graph.vertices.length;
-        let heteroAtoms = preprocessor.graph.vertices.map((v) => v.value.element).filter((e) => e !== "C" && e !== "H");
-        let uniqueHetero = [...new Set(heteroAtoms)];
-        let descText = `Molek\xFCl mit ${vertexCount} sichtbaren Atomen.`;
-        if (uniqueHetero.length > 0) {
-          descText += ` Enth\xE4lt: ${uniqueHetero.join(", ")}.`;
-        }
+        let descText = "";
         try {
           const generator = new DescriptionGenerator(
             preprocessor.graph,
@@ -14551,7 +14545,7 @@
           );
           const naturalDesc = generator.generate();
           if (naturalDesc) {
-            descText += " " + naturalDesc;
+            descText = naturalDesc;
           }
         } catch (e) {
         }

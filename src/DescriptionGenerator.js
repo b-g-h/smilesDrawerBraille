@@ -29,7 +29,7 @@ export default class DescriptionGenerator {
         parts.push(this._describeBonds());
         parts.push(this._describeStereo());
 
-        return parts.filter(p => p).join(' ');
+        return parts.filter(p => p).join('\n\n');
     }
 
     _describeComposition() {
