@@ -1,8 +1,8 @@
 # smilesDrawerBraille
 
 This project provides a way to visualize chemical SMILES strings using Braille Unicode characters.
-It is specifically designed for accessibility, using the **Euro85    0** font to represent 
-molecular structures in a format readable by braille-enabled displays or embossers.
+It is specifically designed for accessibility, using the **Euro-850** font to represent 
+molecular structures in a format readable for blind users.
 
 ## Features
 - **Accessibility-First:** Converts 2D molecular coordinates into Braille patterns.
