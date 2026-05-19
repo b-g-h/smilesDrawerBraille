@@ -685,12 +685,40 @@ async function downloadSVG(svgId, fileName) {
         const scanBtn = document.getElementById('scan-btn');
         let scanImageBase64 = null;
 
+        // Einfache client-seitige Verschlüsselung für den API-Key (besser als Klartext in localStorage)
+        function _xorCipher(text, key) {
+            let out = '';
+            for (let i = 0; i < text.length; i++) {
+                out += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+            }
+            return out;
+        }
+        function encryptKey(plain) {
+            try {
+                const key = location.hostname + '_owui';
+                return btoa(_xorCipher(plain, key));
+            } catch (e) { return ''; }
+        }
+        function decryptKey(cipher) {
+            try {
+                const key = location.hostname + '_owui';
+                return _xorCipher(atob(cipher), key);
+            } catch (e) { return ''; }
+        }
+
         // Werte aus localStorage wiederherstellen
         if (localStorage.getItem('owuiUrl')) owuiUrlInput.value = localStorage.getItem('owuiUrl');
-        if (localStorage.getItem('owuiKey')) owuiKeyInput.value = localStorage.getItem('owuiKey');
+        const storedKey = localStorage.getItem('owuiKey');
+        if (storedKey) {
+            const decrypted = decryptKey(storedKey);
+            if (decrypted) owuiKeyInput.value = decrypted;
+        }
 
         owuiUrlInput.addEventListener('change', () => localStorage.setItem('owuiUrl', owuiUrlInput.value));
-        owuiKeyInput.addEventListener('change', () => localStorage.setItem('owuiKey', owuiKeyInput.value));
+        owuiKeyInput.addEventListener('change', () => {
+            const encrypted = encryptKey(owuiKeyInput.value);
+            if (encrypted) localStorage.setItem('owuiKey', encrypted);
+        });
 
         // Drag & Drop
         uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.style.background = 'hsla(158, 39%, 72%, 0.25)'; });
