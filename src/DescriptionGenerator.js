@@ -50,7 +50,7 @@ export default class DescriptionGenerator {
                 return count === 1 ? `ein ${name}` : `${count} ${name}`;
             });
 
-        let text = `Das Molekül besteht aus insgesamt ${total} Atom${total !== 1 ? 'en' : ''}`;
+        let text = `Das Molekül besteht aus insgesamt ${total} sichtbaren Atom${total !== 1 ? 'en' : ''}`;
         if (elementList.length > 0) {
             text += `: ${this._joinList(elementList)}`;
         }

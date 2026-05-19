@@ -14330,7 +14330,7 @@
         const name = this._elementName(el);
         return count === 1 ? `ein ${name}` : `${count} ${name}`;
       });
-      let text = `Das Molek\xFCl besteht aus insgesamt ${total} Atom${total !== 1 ? "en" : ""}`;
+      let text = `Das Molek\xFCl besteht aus insgesamt ${total} sichtbaren Atom${total !== 1 ? "en" : ""}`;
       if (elementList.length > 0) {
         text += `: ${this._joinList(elementList)}`;
       }
@@ -14538,7 +14538,7 @@
         let vertexCount = preprocessor.graph.vertices.length;
         let heteroAtoms = preprocessor.graph.vertices.map((v) => v.value.element).filter((e) => e !== "C" && e !== "H");
         let uniqueHetero = [...new Set(heteroAtoms)];
-        let descText = `Molek\xFCl mit ${vertexCount} Atomen.`;
+        let descText = `Molek\xFCl mit ${vertexCount} sichtbaren Atomen.`;
         if (uniqueHetero.length > 0) {
           descText += ` Enth\xE4lt: ${uniqueHetero.join(", ")}.`;
         }

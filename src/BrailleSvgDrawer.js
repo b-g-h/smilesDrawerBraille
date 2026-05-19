@@ -97,7 +97,7 @@ export default class BrailleSvgDrawer extends SvgDrawer {
                 .map(v => v.value.element)
                 .filter(e => e !== 'C' && e !== 'H');
             let uniqueHetero = [...new Set(heteroAtoms)];
-            let descText = `Molekül mit ${vertexCount} Atomen.`;
+            let descText = `Molekül mit ${vertexCount} sichtbaren Atomen.`;
             if (uniqueHetero.length > 0) {
                 descText += ` Enthält: ${uniqueHetero.join(', ')}.`;
             }
