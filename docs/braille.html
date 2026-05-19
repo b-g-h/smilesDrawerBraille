@@ -415,6 +415,13 @@
 
             labelBraille.textContent = smiles;
             labelControl.textContent = smiles;
+            const desc = svgBraille.querySelector('desc');
+            const textEl = document.getElementById('description-text');
+            if (desc && desc.textContent && textEl) {
+                textEl.textContent = desc.textContent;
+            } else if (textEl) {
+                textEl.textContent = 'Keine Beschreibung verfügbar.';
+            }
         }
 
         async function getSVGWithEmbeddedFont(svgId) {
@@ -665,34 +672,6 @@ async function downloadSVG(svgId, fileName) {
             draw(smiles);
         }
 
-        input.addEventListener('keyup', e => { if (e.key === 'Enter') draw(input.value); });
-
-        // Tastenkombination Alt+D: Beschreibung ein-/ausblenden
-        document.addEventListener('keydown', e => {
-            if (e.altKey && (e.key === 'd' || e.key === 'D')) {
-                e.preventDefault();
-                toggleDescription();
-            }
-        });
-
-        function toggleDescription() {
-            const panel = document.getElementById('description-panel');
-            const textEl = document.getElementById('description-text');
-            const svg = document.getElementById('output-braille');
-            const desc = svg.querySelector('desc');
-
-            if (panel.classList.contains('visible')) {
-                panel.classList.remove('visible');
-            } else {
-                if (desc && desc.textContent) {
-                    textEl.textContent = desc.textContent;
-                } else {
-                    textEl.textContent = 'Keine Beschreibung verfügbar.';
-                }
-                panel.classList.add('visible');
-                textEl.focus();
-            }
-        }
 
         // --- Scan to SMILES (OpenWebUI Vision) ---
         const owuiUrlInput = document.getElementById('owui-url');
