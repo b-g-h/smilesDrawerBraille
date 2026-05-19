@@ -668,6 +668,14 @@ async function downloadSVG(svgId, fileName) {
             doc.save(fileName);
         }
 
+        let debounceTimer;
+        input.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                draw(input.value);
+            }, 200);
+        });
+
         function loadExample(smiles) {
             input.value = smiles;
             draw(smiles);
