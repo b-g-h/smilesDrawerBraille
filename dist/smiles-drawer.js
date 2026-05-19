@@ -14328,7 +14328,7 @@
       }
       const elementList = Object.entries(elements).sort((a, b) => b[1] - a[1]).map(([el, count]) => {
         const name = this._elementName(el);
-        return count === 1 ? `ein ${name}` : `${count} ${name}`;
+        return count === 1 ? `ein ${name}` : `${count} ${name}e`;
       });
       let text = `Das Molek\xFCl besteht aus insgesamt ${total} sichtbaren Atom${total !== 1 ? "en" : ""}`;
       if (elementList.length > 0) {
