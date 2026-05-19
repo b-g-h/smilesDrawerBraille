@@ -752,10 +752,22 @@ async function downloadSVG(svgId, fileName) {
                 });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
-                const models = data.data || data.models || data;
+                console.log('OpenWebUI /api/models response:', data);
+
+                // OpenWebUI liefert Modelle unter verschiedenen Keys
+                let models = data.data || data.models || (Array.isArray(data) ? data : []);
+
+                // Manchmal sind die Modelle verschachtelt in { data: { models: [...] } }
+                if (!Array.isArray(models) && data.data && data.data.models) {
+                    models = data.data.models;
+                }
+                if (!Array.isArray(models) && data.data) {
+                    models = data.data;
+                }
+
                 owuiModelSelect.innerHTML = '';
                 if (!Array.isArray(models) || models.length === 0) {
-                    scanStatus.textContent = 'Keine Modelle gefunden.';
+                    scanStatus.textContent = 'Keine Modelle gefunden (Struktur: ' + JSON.stringify(Object.keys(data)).slice(0,80) + '...)';
                     scanStatus.className = 'status error';
                     return;
                 }
@@ -768,7 +780,11 @@ async function downloadSVG(svgId, fileName) {
                 scanStatus.textContent = `${models.length} Modelle geladen.`;
                 scanStatus.className = 'status success';
             } catch (err) {
-                scanStatus.textContent = 'Fehler beim Laden: ' + err.message;
+                if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
+                    scanStatus.textContent = 'CORS-Fehler: Der Browser blockiert den Request. Falls du die Seite lokal (file:// oder anderer Host) öffnest, versuche den CORS-Proxy unter Einstellungen oder öffne die Seite vom gleichen Server.';
+                } else {
+                    scanStatus.textContent = 'Fehler beim Laden: ' + err.message;
+                }
                 scanStatus.className = 'status error';
                 console.error(err);
             }
