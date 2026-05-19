@@ -121,6 +121,7 @@
             letter-spacing: .05em;
             color: rgb(10 10 10 / 0.9);
             padding: 0.8rem;
+            margin: 0.3em;
             transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
             transition-timing-function: cubic-bezier(.4, 0, .2, 1);
             transition-duration: .15s;
@@ -278,7 +279,7 @@
         </div>
 
         <div class="card scan-card">
-            <h3>Scan to SMILES</h3>
+            <h3>Scan2SMILES</h3>
             <p class="smiles" style="color:#888; font-size:0.8rem; margin-bottom:0.75rem;">
                 Molekül von Foto erkennen (OpenWebUI Vision)
             </p>
@@ -317,8 +318,8 @@
         </div>
     </div>
 
-    <div class="controls" style="margin-top:1.5rem;">
-        <label>Beispiele</label>
+    <div class="card" style="margin-top:1.5rem;">
+        <h3>Beispiele</h3>
         <div class="toggle">
             <button onclick="loadExample('C1CCCCC1')">Benzol</button>
             <button onclick="loadExample('CC(=O)Oc1ccccc1C(=O)O')">Aspirin</button>
