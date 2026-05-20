@@ -14480,7 +14480,9 @@
         bondThickness: 2,
         bondLength: 45,
         bondSpacing: 8,
-        padding: 20
+        padding: 20,
+        compactDrawing: false,
+        explicitHydrogens: true
       };
       const merged = Object.assign({}, brailleDefaults, options);
       super(merged, clear);
