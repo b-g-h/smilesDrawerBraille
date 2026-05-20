@@ -32,7 +32,7 @@
     "node_modules/chroma-js/chroma.js"(exports, module) {
       (function(global, factory) {
         typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, global.chroma = factory());
-      })(exports, function() {
+      })(exports, (function() {
         "use strict";
         var limit$2 = function(x, min2, max2) {
           if (min2 === void 0) min2 = 0;
@@ -3010,7 +3010,7 @@
         chroma2.brewer = colorbrewer_1;
         var chroma_js = chroma2;
         return chroma_js;
-      });
+      }));
     }
   });
 
@@ -11785,7 +11785,7 @@
   };
 
   // src/Parser.js
-  var Parser_default = function() {
+  var Parser_default = (function() {
     "use strict";
     function peg$subclass(child, parent) {
       function ctor() {
@@ -13297,7 +13297,7 @@
       SyntaxError: peg$SyntaxError,
       parse: peg$parse
     };
-  }();
+  })();
 
   // src/FormulaToCommonName.js
   var FormulaToCommonName_default = {
@@ -14482,7 +14482,8 @@
         bondSpacing: 8,
         padding: 20,
         compactDrawing: false,
-        explicitHydrogens: true
+        explicitHydrogens: true,
+        shortBondLength: 1
       };
       const merged = Object.assign({}, brailleDefaults, options);
       super(merged, clear);

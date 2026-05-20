@@ -26,7 +26,8 @@ export default class BrailleSvgDrawer extends SvgDrawer {
             bondSpacing: 8,
             padding: 20.0,
             compactDrawing: false,
-            explicitHydrogens: true
+            explicitHydrogens: true,
+            shortBondLength: 1
         };
         const merged = Object.assign({}, brailleDefaults, options);
         super(merged, clear);
