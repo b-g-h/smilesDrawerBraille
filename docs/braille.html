@@ -425,6 +425,11 @@
             filter: invert(1);
         }
 
+        /* Text-Hintergrund-Rechtecke anpassen (Browser-Darstellung, nicht Download) */
+        .card svg .text-bg {
+            fill: var(--card-bg) !important;
+        }
+
         /* Dark Mode Toggle im Header */
         .header-row {
             display: flex;

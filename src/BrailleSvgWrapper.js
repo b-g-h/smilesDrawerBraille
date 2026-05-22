@@ -250,6 +250,7 @@ export default class BrailleSvgWrapper extends SvgWrapper {
         bg.setAttributeNS(null, 'rx', 4);
         bg.setAttributeNS(null, 'ry', 4);
         bg.setAttributeNS(null, 'fill', '#ffffff');
+        bg.setAttributeNS(null, 'class', 'text-bg');
         g.insertBefore(bg, textElem);
 
         g.setAttributeNS(null, 'role', 'group');
