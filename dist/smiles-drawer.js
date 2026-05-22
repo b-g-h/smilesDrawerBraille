@@ -32,7 +32,7 @@
     "node_modules/chroma-js/chroma.js"(exports, module) {
       (function(global, factory) {
         typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, global.chroma = factory());
-      })(exports, (function() {
+      })(exports, function() {
         "use strict";
         var limit$2 = function(x, min2, max2) {
           if (min2 === void 0) min2 = 0;
@@ -3010,7 +3010,7 @@
         chroma2.brewer = colorbrewer_1;
         var chroma_js = chroma2;
         return chroma_js;
-      }));
+      });
     }
   });
 
@@ -11785,7 +11785,7 @@
   };
 
   // src/Parser.js
-  var Parser_default = (function() {
+  var Parser_default = function() {
     "use strict";
     function peg$subclass(child, parent) {
       function ctor() {
@@ -13297,7 +13297,7 @@
       SyntaxError: peg$SyntaxError,
       parse: peg$parse
     };
-  })();
+  }();
 
   // src/FormulaToCommonName.js
   var FormulaToCommonName_default = {
@@ -14115,7 +14115,9 @@
       let rx_rect, ry_rect;
       if (direction === "up" || direction === "down") {
         rx_rect = bbox.width + padding * 2;
-        ry_rect = 1.2 * bbox.height * text.length + padding * 2;
+        const emPx = this.opts.fontSizeLarge * (96 / 72);
+        const lineHeight = 1.3 * emPx;
+        ry_rect = lineHeight * (text.length - 1) + bbox.height + padding * 2;
       } else {
         rx_rect = bbox.width * text.length + padding * 2;
         ry_rect = bbox.height * 1.2 + padding * 2;
@@ -14139,8 +14141,12 @@
         const emPx = this.opts.fontSizeLarge * (96 / 72);
         const textTop = 0.36 * emPx - bbox.height * 0.7;
         rectY = textTop - padding;
-      } else {
-        rectY = -ry_rect / 2;
+      } else if (direction === "down") {
+        rectY = -bbox.height / 2 - padding;
+      } else if (direction === "up") {
+        const emPx = this.opts.fontSizeLarge * (96 / 72);
+        const lineHeight = 1.3 * emPx;
+        rectY = -lineHeight * (text.length - 1) - bbox.height / 2 - padding;
       }
       bg.setAttributeNS(null, "x", rectX);
       bg.setAttributeNS(null, "y", rectY);

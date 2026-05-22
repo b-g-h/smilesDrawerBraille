@@ -196,7 +196,10 @@ export default class BrailleSvgWrapper extends SvgWrapper {
         if (direction === 'up' || direction === 'down') {
             // Vertikal gestapelter Text
             rx_rect = bbox.width + padding * 2;
-            ry_rect = 1.2 * bbox.height * text.length + padding * 2;
+            const emPx = this.opts.fontSizeLarge * (96 / 72);
+            const lineHeight = 1.3 * emPx;
+            // Höhe = (n-1)·Zeilenabstand + eine Zeilenhöhe + Padding
+            ry_rect = lineHeight * (text.length - 1) + bbox.height + padding * 2;
         } else {
             // Horizontal nebeneinander
             rx_rect = bbox.width * text.length + padding * 2;
@@ -230,9 +233,14 @@ export default class BrailleSvgWrapper extends SvgWrapper {
             const emPx = this.opts.fontSizeLarge * (96 / 72);
             const textTop = 0.36 * emPx - bbox.height * 0.7;
             rectY = textTop - padding;
-        } else {
-            // up/down: zentriert um y=0 (dominant-baseline="central")
-            rectY = -ry_rect / 2;
+        } else if (direction === 'down') {
+            // Text beginnt bei y=0 (central), erste Zeile oben bei -bbox.height/2
+            rectY = -bbox.height / 2 - padding;
+        } else if (direction === 'up') {
+            // Text geht nach oben, letzte Zeile oben bei -1.3em·(n-1) - bbox.height/2
+            const emPx = this.opts.fontSizeLarge * (96 / 72);
+            const lineHeight = 1.3 * emPx;
+            rectY = -lineHeight * (text.length - 1) - bbox.height / 2 - padding;
         }
 
         bg.setAttributeNS(null, 'x', rectX);
