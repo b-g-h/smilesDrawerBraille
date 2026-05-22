@@ -341,6 +341,18 @@
             </div>
         </div>
 
+        <div class="card" style="margin-top:1.5rem;">
+            <h3>Beispiele</h3>
+            <div class="toggle">
+                <button onclick="loadExample('C1CCCCC1')">Benzol</button>
+                <button onclick="loadExample('CC(=O)Oc1ccccc1C(=O)O')">Aspirin</button>
+                <button onclick="loadExample('CC(C)CC1=CC=C(C=C1)C(C)C(=O)O')">Ibuprofen</button>
+                <button onclick="loadExample('C(C1C(C(C(C(O1)O)O)O)O)O')">Glukose</button>
+                <button onclick="loadExample('C1=CC=CC=C1C2=CC=CC=C2')">Biphenyl</button>
+                <button onclick="loadExample('C1CC[C@H](C1)O')">Cyclopentanol (chiral)</button>
+            </div>
+        </div>
+
         <div class="card scan-card">
             <h3>Scan2SMILES</h3>
             <p class="smiles" style="color:#888; font-size:0.8rem; margin-bottom:0.75rem;">
@@ -383,17 +395,7 @@
         </div>
     </div>
 
-    <div class="card" style="margin-top:1.5rem;">
-        <h3>Beispiele</h3>
-        <div class="toggle">
-            <button onclick="loadExample('C1CCCCC1')">Benzol</button>
-            <button onclick="loadExample('CC(=O)Oc1ccccc1C(=O)O')">Aspirin</button>
-            <button onclick="loadExample('CC(C)CC1=CC=C(C=C1)C(C)C(=O)O')">Ibuprofen</button>
-            <button onclick="loadExample('C(C1C(C(C(C(O1)O)O)O)O)O')">Glukose</button>
-            <button onclick="loadExample('C1=CC=CC=C1C2=CC=CC=C2')">Biphenyl</button>
-            <button onclick="loadExample('C1CC[C@H](C1)O')">Cyclopentanol (chiral)</button>
-        </div>
-    </div>
+
 
     <!-- SmilesDrawer Bundle -->
     <script src="./js/smiles-drawer.min.js"></script>
