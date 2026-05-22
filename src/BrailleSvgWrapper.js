@@ -122,12 +122,12 @@ export default class BrailleSvgWrapper extends SvgWrapper {
             if (y - bbox.height < this.minY) this.minY = y - bbox.height;
             if (y + bbox.height > this.maxY) this.maxY = y + bbox.height;
             if (direction === 'down') {
-                if (y + 0.8 * bbox.height * text.length > this.maxY) {
+                if (y + 1.3 * bbox.height * text.length > this.maxY) {
                     this.maxY = y + 0.8 * bbox.height * text.length;
                 }
             }
             if (direction === 'up') {
-                if (y - 0.8 * bbox.height * text.length < this.minY) {
+                if (y - 1.3 * bbox.height * text.length < this.minY) {
                     this.minY = y - 0.8 * bbox.height * text.length;
                 }
             }
@@ -163,9 +163,9 @@ export default class BrailleSvgWrapper extends SvgWrapper {
             if (direction === 'up' || direction === 'down') {
                 tspanElem.setAttributeNS(null, 'x', '0px');
                 if (direction === 'up') {
-                    tspanElem.setAttributeNS(null, 'y', `-${0.9 * i}em`);
+                    tspanElem.setAttributeNS(null, 'y', `-${1.3 * i}em`);
                 } else {
-                    tspanElem.setAttributeNS(null, 'y', `${0.9 * i}em`);
+                    tspanElem.setAttributeNS(null, 'y', `${1.3 * i}em`);
                 }
             }
 
@@ -196,7 +196,7 @@ export default class BrailleSvgWrapper extends SvgWrapper {
         if (direction === 'up' || direction === 'down') {
             // Vertikal gestapelter Text
             rx_rect = bbox.width + padding * 2;
-            ry_rect = bbox.height * text.length + padding * 2;
+            ry_rect = 1.2 * bbox.height * text.length + padding * 2;
         } else {
             // Horizontal nebeneinander
             rx_rect = bbox.width * text.length + padding * 2;
