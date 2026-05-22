@@ -5,6 +5,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SmilesDrawer Braille – Prototyp</title>
     <style>
+        :root {
+            --body-bg: #e4e4de7d;
+            --body-text: #3e8572;
+            --card-bg: #fff;
+            --card-border: #444;
+            --card-h3: #555;
+            --smiles-text: #888;
+            --svg-bg: #fff;
+            --svg-border: #e0e0e0;
+            --controls-bg: #fff;
+            --controls-border: #333;
+            --input-bg: hsla(158, 39%, 72%, 0.2);
+            --input-border: #3e8572;
+            --hint-text: #666;
+            --button-bg: rgb(157 212 192 / 0.8);
+            --button-border: rgb(157 212 192 / 0.4);
+            --button-text: rgb(10 10 10 / 0.9);
+            --button-hover-bg: #333;
+            --button-hover-text: #fff;
+            --desc-panel-bg: #fff;
+            --desc-panel-border: #333;
+            --p-text: #333;
+            --scan-label: #333;
+            --upload-zone-text: #555;
+            --upload-zone-border: #3e8572;
+            --status-error: #c44;
+            --status-success: #3e8572;
+            --switch-text: rgb(10 10 10 / 0.9);
+            --slider-bg: #ccc;
+            --slider-checked: #3e8572;
+        }
+
+        [data-theme="dark"] {
+            --body-bg: #1a1a2e;
+            --body-text: #a8d5ba;
+            --card-bg: #2d2d44;
+            --card-border: #555;
+            --card-h3: #ccc;
+            --smiles-text: #999;
+            --svg-bg: #2d2d44;
+            --svg-border: #555;
+            --controls-bg: #2d2d44;
+            --controls-border: #555;
+            --input-bg: hsla(158, 39%, 72%, 0.1);
+            --input-border: #5a9e8a;
+            --hint-text: #aaa;
+            --button-bg: #3e8572;
+            --button-border: #5a9e8a;
+            --button-text: #fff;
+            --button-hover-bg: #5a9e8a;
+            --button-hover-text: #fff;
+            --desc-panel-bg: #2d2d44;
+            --desc-panel-border: #555;
+            --p-text: #ddd;
+            --scan-label: #ccc;
+            --upload-zone-text: #aaa;
+            --upload-zone-border: #5a9e8a;
+            --status-error: #ff6b6b;
+            --status-success: #5a9e8a;
+            --switch-text: rgba(255,255,255,0.9);
+            --slider-bg: #555;
+            --slider-checked: #5a9e8a;
+        }
+
         @font-face {
             font-family: 'Euro850';
             src: url('./fonts/Euro850.ttf') format('truetype');
@@ -14,11 +78,12 @@
 
         body {
             font-family: system-ui, sans-serif;
-            background: #e4e4de7d;
+            background: var(--body-bg);
             margin: 0 auto;
             padding: 2rem;
             max-width: 1200px;
-            color: #3e8572;
+            color: var(--body-text);
+            transition: background 0.3s, color 0.3s;
         }
 
         h1 {
@@ -26,14 +91,15 @@
         }
 
         .controls {
-            background: #fff;
+            background: var(--controls-bg);
             padding: 1rem 1.5rem;
             border-radius: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             margin-bottom: 1.5rem;
             border-width: 2px;
             border-style: solid;
-            border-color: #333;
+            border-color: var(--controls-border);
+            transition: background 0.3s, border-color 0.3s;
         }
 
         .controls label {
@@ -47,16 +113,19 @@
             width: 100%;
             padding: 0.5rem;
             font-size: 1.3rem;
-            border: 2px solid #3e8572;
-            background-color: hsla(158, 39%, 72%, 0.2   );
+            border: 2px solid var(--input-border);
+            background-color: var(--input-bg);
             border-radius: 4px;
             box-sizing: border-box;
+            color: var(--p-text);
+            transition: background 0.3s, border-color 0.3s, color 0.3s;
         }
 
         .controls .hint {
             font-size: 0.85rem;
-            color: #666;
+            color: var(--hint-text);
             margin-top: 0.4rem;
+            transition: color 0.3s;
         }
 
         .gallery {
@@ -72,26 +141,29 @@
         }
 
         .card {
-            background: #fff;
+            background: var(--card-bg);
             border-radius: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             padding: 1rem;
-            border-color:#444444;
-            border-style:solid;
+            border-color: var(--card-border);
+            border-style: solid;
             border-width: 2px;
+            transition: background 0.3s, border-color 0.3s;
         }
 
         .card h3 {
             margin: 0 0 0.5rem;
-            color: #555;
+            color: var(--card-h3);
+            transition: color 0.3s;
         }
 
         .card .smiles {
             font-family: monospace;
             font-size: 0.8rem;
-            color: #888;
+            color: var(--smiles-text);
             margin-bottom: 0.75rem;
             word-break: break-all;
+            transition: color 0.3s;
         }
 
         .card svg {
@@ -99,9 +171,10 @@
             width: 100%;
             height: auto;
             max-width: 100%;
-            background: #fff;
-            border: 2px solid #e0e0e0;
+            background: var(--svg-bg);
+            border: 2px solid var(--svg-border);
             border-radius: 4px;
+            transition: background 0.3s, border-color 0.3s;
         }
 
         /* Toggle-Switch Checkboxen */
@@ -114,7 +187,8 @@
             font-size: 12px;
             font-weight: 700;
             letter-spacing: .05em;
-            color: rgb(10 10 10 / 0.9);
+            color: var(--switch-text);
+            transition: color 0.3s;
         }
 
         .switch input {
@@ -125,7 +199,7 @@
             position: relative;
             width: 40px;
             height: 22px;
-            background-color: #ccc;
+            background-color: var(--slider-bg);
             border-radius: 22px;
             transition: .4s;
             flex-shrink: 0;
@@ -144,7 +218,7 @@
         }
 
         .switch input:checked + .slider {
-            background-color: #3e8572;
+            background-color: var(--slider-checked);
         }
 
         .switch input:checked + .slider::before {
@@ -162,28 +236,28 @@
             gap: .5rem;
             border-radius: .375rem;
             border-width: 2px;
-            border-color: rgb(157 212 192 / 0.4);
-            background-color: rgb(157 212 192 / 0.8);
+            border-color: var(--button-border);
+            background-color: var(--button-bg);
             font-size: 12px;
             font-weight: 700;
             letter-spacing: .05em;
-            color: rgb(10 10 10 / 0.9);
+            color: var(--button-text);
             padding: 0.8rem;
             margin: 0.3em;
-            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+            transition-property: color, background-color, border-color;
             transition-timing-function: cubic-bezier(.4, 0, .2, 1);
             transition-duration: .15s;
         }
 
         .toggle button:active {
-            background: #333;
-            color: #fff;
-            border-color: #333;
+            background: var(--button-hover-bg);
+            color: var(--button-hover-text);
+            border-color: var(--button-hover-bg);
         }
         .toggle button:hover {
-            background: #333;
-            color: #fff;
-            border-color: #333;
+            background: var(--button-hover-bg);
+            color: var(--button-hover-text);
+            border-color: var(--button-hover-bg);
         }
 
 
@@ -197,34 +271,41 @@
         }
 
         .description-panel {
-            background: #fff;
-            border: 2px solid #333;
+            background: var(--desc-panel-bg);
+            border: 2px solid var(--desc-panel-border);
             border-radius: 8px;
             padding: 1.5rem;
             margin-top: 1rem;
             max-width: 600px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: background 0.3s, border-color 0.3s;
         }
 
 
         .description-panel h2 {
             margin-top: 0;
             font-size: 1.1rem;
+            color: var(--p-text);
+            transition: color 0.3s;
         }
 
         .description-panel p {
             line-height: 1.6;
             margin: 0;
             white-space: pre-wrap;
+            color: var(--p-text);
+            transition: color 0.3s;
         }
 
         .description-panel .kbd-hint {
             margin-top: 0.75rem;
             font-size: 0.8rem;
-            color: #666;
+            color: var(--hint-text);
+            transition: color 0.3s;
         }
         p {
-            color: #333;
+            color: var(--p-text);
+            transition: color 0.3s;
         }
 
         /* Scan to SMILES */
@@ -237,11 +318,13 @@
             width: 100%;
             padding: 0.5rem;
             font-size: 1rem;
-            border: 2px solid #3e8572;
+            border: 2px solid var(--input-border);
             border-radius: 4px;
             box-sizing: border-box;
             margin-bottom: 0.75rem;
-            background-color: hsla(158, 39%, 72%, 0.2);
+            background-color: var(--input-bg);
+            color: var(--p-text);
+            transition: background 0.3s, border-color 0.3s, color 0.3s;
         }
         .scan-card .api-row {
             display: grid;
@@ -249,14 +332,14 @@
             gap: 0.75rem;
         }
         .scan-card .upload-zone {
-            border: 2px dashed #3e8572;
+            border: 2px dashed var(--upload-zone-border);
             border-radius: 8px;
             padding: 1.5rem;
             text-align: center;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: background-color 0.2s, border-color 0.3s;
             margin-bottom: 0.75rem;
-            color: #555;
+            color: var(--upload-zone-text);
         }
         .scan-card .upload-zone:hover {
             background-color: hsla(158, 39%, 72%, 0.15);
@@ -288,14 +371,29 @@
             margin-top: 0.5rem;
             min-height: 1.2em;
         }
-        .scan-card .status.error { color: #c44; }
-        .scan-card .status.success { color: #3e8572; }
-        .scan-card label { color: #333; }
+        .scan-card .status.error { color: var(--status-error); transition: color 0.3s; }
+        .scan-card .status.success { color: var(--status-success); transition: color 0.3s; }
+        .scan-card label { color: var(--scan-label); transition: color 0.3s; }
 
+        /* Dark Mode Toggle im Header */
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
     </style>
 </head>
 <body>
-    <h1> SmilesDrawer ⚟️ ⡃⠗⠁⠊⠇⠇⠑</h1>
+    <div class="header-row">
+        <h1> SmilesDrawer ⚟️ ⡃⠗⠁⠊⠇⠇⠑</h1>
+        <label class="switch">
+            <input type="checkbox" id="chk-dark" onchange="toggleDarkMode()">
+            <span class="slider"></span>
+            <span>Dark Mode</span>
+        </label>
+    </div>
 
     <div class="controls">
         <label for="smiles-input">SMILES-String</label>
@@ -353,7 +451,7 @@
 
         <div class="card scan-card">
             <h3>Scan2SMILES</h3>
-            <p class="smiles" style="color:#888; font-size:0.8rem; margin-bottom:0.75rem;">
+            <p class="smiles" style="color:var(--smiles-text); font-size:0.8rem; margin-bottom:0.75rem;">
                 Molekül von Foto erkennen (OpenWebUI Vision)
             </p>
 
@@ -372,7 +470,7 @@
             <select id="owui-model">
                 <option value="">-- zuerst Modelle laden --</option>
             </select>
-            <p style="font-size:0.75rem; color:#888; margin:0.25rem 0 0.5rem;">
+            <p style="font-size:0.75rem; color:var(--hint-text); margin:0.25rem 0 0.5rem;">
                 ⚠️ Nur Vision-fähige Modelle können Bilder analysieren (z. B. GPT-4o, LLaVA, Qwen-VL).
             </p>
             <div class="toggle" style="margin-bottom:0.75rem;">
@@ -381,7 +479,7 @@
 
             <div class="upload-zone" id="upload-zone" onclick="document.getElementById('scan-file').click()">
                 <div class="upload-hint">📷 Foto aufnehmen oder Bild hochladen</div>
-                <div class="upload-hint" style="font-size:0.8rem; color:#888; margin-top:0.25rem;">Klicken oder Datei hierher ziehen</div>
+                <div class="upload-hint" style="font-size:0.8rem; color:var(--hint-text); margin-top:0.25rem;">Klicken oder Datei hierher ziehen</div>
                 <img id="scan-preview" class="preview" alt="Vorschau">
             </div>
             <input type="file" id="scan-file" accept="image/png,image/jpeg,image/jpg" capture="environment" style="display:none;">
@@ -409,6 +507,25 @@
         const labelControl = document.getElementById('smiles-label-control');
         const svgControl = document.getElementById('output-control');
         let currentSmiles = '';
+
+        // Dark Mode
+        function toggleDarkMode() {
+            const chk = document.getElementById('chk-dark');
+            if (chk.checked) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Theme aus localStorage wiederherstellen
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.getElementById('chk-dark').checked = true;
+        }
 
         // Braille-Drawer – DIN A5 Querformat bei 96 DPI (210×148 mm)
         const brailleDrawer = new SmilesDrawer.BrailleSvgDrawer({
