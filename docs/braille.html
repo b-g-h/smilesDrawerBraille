@@ -266,6 +266,8 @@
             <div class="toggle" style="margin-top: 0.5rem;">
                 <button onclick="downloadSVG('output-braille', 'braille.svg')">SVG Download</button>
                 <button onclick="downloadPDF('output-braille', 'braille.pdf')">PDF Download (A4 Quer)</button>
+                <button id="btn-compact" onclick="toggleCompact()">kompakt: aus</button>
+                <button id="btn-hydro" onclick="toggleHydro()">explizite H: an</button>
             </div>
             <div id="description-panel" class="description-panel" role="region" aria-live="polite" aria-label="Molekülbeschreibung">
                 <h2>Beschreibung der Struktur</h2>
@@ -384,6 +386,24 @@
             svgElement.setAttribute('viewBox', `${x} ${y} ${w} ${h}`);
             svgElement.setAttribute('width', w);
             svgElement.setAttribute('height', h);
+        }
+        function toggleCompact() {
+            brailleDrawer.opts.compactDrawing = !brailleDrawer.opts.compactDrawing;
+            controlDrawer.opts.compactDrawing = !controlDrawer.opts.compactDrawing;
+            const btn = document.getElementById('btn-compact');
+            btn.textContent = brailleDrawer.opts.compactDrawing ? 'kompakt: an' : 'kompakt: aus';
+            if (currentSmiles) {
+                draw(currentSmiles);
+            }
+        }
+        function toggleHydro() {
+            brailleDrawer.opts.explicitHydrogens = !brailleDrawer.opts.explicitHydrogens;
+            controlDrawer.opts.explicitHydrogens = !controlDrawer.opts.explicitHydrogens;
+            const btn = document.getElementById('btn-hydro');
+            btn.textContent = brailleDrawer.opts.explicitHydrogens ? 'explizite H: an' : 'explizite H: aus';
+            if (currentSmiles) {
+                draw(currentSmiles);
+            }
         }
 
         function draw(smiles) {
