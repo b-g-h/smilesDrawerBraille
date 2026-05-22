@@ -425,11 +425,10 @@
             filter: invert(1);
         }
 
-        /* Text-Hintergrund-Rechtecke im Dark Mode an Card-Hintergrund anpassen
-           Gegen-Invertierung, weil das SVG selbst invertiert wird */
+        /* Text-Hintergrund-Rechtecke im Dark Mode vor-invertierte Farbe setzen,
+           damit SVG-Gesamtfilter invert(1) sie auf Card-Hintergrund bringt */
         [data-theme="dark"] .card svg .text-bg {
-            fill: var(--card-bg) !important;
-            filter: invert(1);
+            fill: #d2d2bb !important;
         }
 
         /* Dark Mode Toggle im Header */
