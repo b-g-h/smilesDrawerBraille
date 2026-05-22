@@ -231,7 +231,7 @@ export default class BrailleSvgWrapper extends SvgWrapper {
         if (direction === 'left' || direction === 'right') {
             // Text-Baseline bei y = 0.36em, Box weiter nach unten verschoben
             const emPx = this.opts.fontSizeLarge * (96 / 72);
-            const textTop = 0.36 * emPx - bbox.height * 0.7;
+            const textTop = 0.36 * emPx - bbox.height * 0.9;
             rectY = textTop - padding;
         } else if (direction === 'down') {
             // Text beginnt bei y=0 (central), erste Zeile oben bei -bbox.height/2
