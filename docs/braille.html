@@ -1254,7 +1254,14 @@ async function downloadSVG(svgId, fileName) {
     <footer class="site-footer">
         <h4>Datenschutz</h4>
         <p>
-            Diese Seite speichert keine personenbezogenen Daten.
+            Diese Seite speichert keine personenbezogenen Daten auf dem Server.
+            Im Browser werden folgende Daten lokal im <code>localStorage</code> gespeichert:
+            die gewählte Theme-Einstellung (Hell/Dunkel), die OpenWebUI-Server-URL
+            und ein verschlüsselter API-Key für die Scan-to-SMILES-Funktion.
+            Diese Daten verlassen Ihren Browser nicht und können jederzeit durch
+            Löschen des lokalen Speichers entfernt werden.
+        </p>
+        <p>
             Beim Aufruf werden technisch bedingt IP-Adressen und Browser-Informationen
             vom Hosting-Anbieter GitHub Pages (GitHub Inc., USA) in Server-Logs verarbeitet.
             Diese Datenverarbeitung erfolgt auf Grundlage der
