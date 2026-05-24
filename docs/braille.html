@@ -439,6 +439,36 @@
             flex-wrap: wrap;
             gap: 1rem;
         }
+
+        /* Footer */
+        .site-footer {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            border-top: 2px solid var(--card-border);
+            font-size: 0.85rem;
+            color: var(--hint-text);
+            line-height: 1.5;
+        }
+        .site-footer h4 {
+            margin: 0 0 0.5rem;
+            font-size: 0.95rem;
+            color: var(--card-h3);
+        }
+        .site-footer a {
+            color: var(--body-text);
+        }
+        .site-footer a:hover {
+            text-decoration: none;
+        }
+        .site-footer p {
+            margin: 0 0 0.75rem;
+            max-width: 70ch;
+        }
+
+        [data-theme="dark"] .card svg {
+            background: transparent;
+            filter: invert(1);
+        }
     </style>
 </head>
 <body>
@@ -1220,5 +1250,27 @@ async function downloadSVG(svgId, fileName) {
         // Initiales Zeichnen
         draw(input.value);
     </script>
+
+    <footer class="site-footer">
+        <h4>Datenschutz</h4>
+        <p>
+            Diese Seite speichert keine personenbezogenen Daten.
+            Beim Aufruf werden technisch bedingt IP-Adressen und Browser-Informationen
+            vom Hosting-Anbieter GitHub Pages (GitHub Inc., USA) in Server-Logs verarbeitet.
+            Diese Datenverarbeitung erfolgt auf Grundlage der
+            <a href="https://docs.github.com/de/site-policy/privacy-policies/github-privacy-statement" target="_blank" rel="noopener noreferrer">GitHub Privacy Statement</a>
+            und der EU-US Data Privacy Framework Adequacy Decision.
+            Es werden keine Cookies gesetzt und kein Tracking durchgeführt.
+        </p>
+
+        <h4>Lizenz</h4>
+        <p>
+            Dieses Projekt basiert auf <a href="https://github.com/reymond-group/smilesDrawer" target="_blank" rel="noopener noreferrer">smilesDrawer</a>
+            (MIT-Lizenz, © Reymond Group).
+            Die eigenen Erweiterungen (Braille-Ansicht, Taktile PDF-Exporte, Barrierefreiheit)
+            stehen ebenfalls unter der MIT-Lizenz.
+            <a href="https://github.com/b-g-h/smilesDrawerBraille/blob/master/LICENSE" target="_blank" rel="noopener noreferrer">Volltext der Lizenz</a>
+        </p>
+    </footer>
 </body>
 </html>
