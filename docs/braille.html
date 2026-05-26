@@ -1288,17 +1288,6 @@ async function downloadSVG(svgId, fileName) {
             });
         }
 
-        // Footer-Akkordeon
-        (function() {
-            const trigger = document.querySelector('.accordion-trigger');
-            const panel = document.getElementById('legal-accordion');
-            if (!trigger || !panel) return;
-            trigger.addEventListener('click', () => {
-                const isOpen = panel.classList.toggle('is-open');
-                trigger.setAttribute('aria-expanded', isOpen);
-            });
-        })();
-
         // Initiales Zeichnen
         draw(input.value);
     </script>
@@ -1338,5 +1327,18 @@ async function downloadSVG(svgId, fileName) {
             </div>
         </div>
     </footer>
+
+    <script>
+        // Footer-Akkordeon
+        (function() {
+            const trigger = document.querySelector('.accordion-trigger');
+            const panel = document.getElementById('legal-accordion');
+            if (!trigger || !panel) return;
+            trigger.addEventListener('click', () => {
+                const isOpen = panel.classList.toggle('is-open');
+                trigger.setAttribute('aria-expanded', isOpen);
+            });
+        })();
+    </script>
 </body>
 </html>
