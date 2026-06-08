@@ -439,6 +439,77 @@
             flex-wrap: wrap;
             gap: 1rem;
         }
+
+        /* Footer */
+        .site-footer {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            border-top: 2px solid var(--card-border);
+            font-size: 0.85rem;
+            color: var(--hint-text);
+            line-height: 1.5;
+        }
+        .site-footer h4 {
+            margin: 0 0 0.5rem;
+            font-size: 0.95rem;
+            color: var(--card-h3);
+        }
+        .site-footer a {
+            color: var(--body-text);
+        }
+        .site-footer a:hover {
+            text-decoration: none;
+        }
+        .site-footer p {
+            margin: 0 0 0.75rem;
+            max-width: 70ch;
+        }
+
+        /* Akkordeon im Footer */
+        .accordion-trigger {
+            width: 100%;
+            background: var(--button-bg);
+            color: var(--button-text);
+            border: 2px solid var(--button-border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background 0.3s, border-color 0.3s, color 0.3s;
+        }
+        .accordion-trigger:hover {
+            background: var(--button-hover-bg);
+            color: var(--button-hover-text);
+        }
+        .accordion-trigger::after {
+            content: '\25B8';
+            font-size: 1.2rem;
+            transition: transform 0.3s;
+        }
+        .accordion-trigger[aria-expanded="true"]::after {
+            transform: rotate(90deg);
+        }
+        .accordion-panel {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.35s ease;
+            margin-top: 0.5rem;
+        }
+        .accordion-panel.is-open {
+            grid-template-rows: 1fr;
+        }
+        .accordion-panel-inner {
+            overflow: hidden;
+        }
+
+        [data-theme="dark"] .card svg {
+            background: transparent;
+            filter: invert(1);
+        }
     </style>
 </head>
 <body>
@@ -1219,6 +1290,55 @@ async function downloadSVG(svgId, fileName) {
 
         // Initiales Zeichnen
         draw(input.value);
+    </script>
+
+    <footer class="site-footer">
+        <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="legal-accordion">
+            Rechtliche Hinweise (Datenschutz &amp; Lizenz)
+        </button>
+        <div id="legal-accordion" class="accordion-panel">
+            <div class="accordion-panel-inner">
+                <h4>Datenschutz</h4>
+                <p>
+                    Diese Seite speichert keine personenbezogenen Daten auf dem Server.
+                    Im Browser werden folgende Daten lokal im <code>localStorage</code> gespeichert:
+                    die gewählte Theme-Einstellung (Hell/Dunkel), die OpenWebUI-Server-URL
+                    und ein verschlüsselter API-Key für die Scan-to-SMILES-Funktion.
+                    Diese Daten verlassen Ihren Browser nicht und können jederzeit durch
+                    Löschen des lokalen Speichers entfernt werden.
+                </p>
+                <p>
+                    Beim Aufruf werden technisch bedingt IP-Adressen und Browser-Informationen
+                    vom Hosting-Anbieter GitHub Pages (GitHub Inc., USA) in Server-Logs verarbeitet.
+                    Diese Datenverarbeitung erfolgt auf Grundlage der
+                    <a href="https://docs.github.com/de/site-policy/privacy-policies/github-privacy-statement" target="_blank" rel="noopener noreferrer">GitHub Privacy Statement</a>
+                    und der EU-US Data Privacy Framework Adequacy Decision.
+                    Es werden keine Cookies gesetzt und kein Tracking durchgeführt.
+                </p>
+
+                <h4>Lizenz</h4>
+                <p>
+                    Dieses Projekt basiert auf <a href="https://github.com/reymond-group/smilesDrawer" target="_blank" rel="noopener noreferrer">smilesDrawer</a>
+                    (MIT-Lizenz, © Reymond Group).
+                    Die eigenen Erweiterungen (Braille-Ansicht, Taktile PDF-Exporte, Barrierefreiheit)
+                    stehen ebenfalls unter der MIT-Lizenz.
+                    <a href="https://github.com/b-g-h/smilesDrawerBraille/blob/master/LICENSE" target="_blank" rel="noopener noreferrer">Volltext der Lizenz</a>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Footer-Akkordeon
+        (function() {
+            const trigger = document.querySelector('.accordion-trigger');
+            const panel = document.getElementById('legal-accordion');
+            if (!trigger || !panel) return;
+            trigger.addEventListener('click', () => {
+                const isOpen = panel.classList.toggle('is-open');
+                trigger.setAttribute('aria-expanded', isOpen);
+            });
+        })();
     </script>
 </body>
 </html>
