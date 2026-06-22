@@ -173,56 +173,56 @@ export default class DescriptionGenerator {
             halogen: 0, fluoride: 0, chloride: 0, bromide: 0, iodide: 0,
         };
 
-        // Set für bereits zugeordnete Atome (um Doppelzählungen zu vermeiden)
+        // Set für bereits zugeordnete Atome
         const usedCarbonylC = new Set();
-        const usedHydroxylO = new Set();
-        const usedEtherO = new Set();
-        const usedAmineN = new Set();
+        const usedO = new Set();
+        const usedN = new Set();
 
         for (const v of this.graph.vertices) {
             const atom = v.value;
             const el = atom.element;
             const nbrs = this._getNeighbourVertices(v.id);
+            const nbrEdges = nbrs.map(n => this._getEdge(v.id, n.id));
 
-            // --- Carbonyl-Erkennung (C=O) ---
-            if (el === 'C') {
-                const doubleBondO = nbrs.find(n =>
-                    n.value.element === 'O' && this._getEdge(v.id, n.id)?.bondType === '='
+            // --- Carbonyl-Analyse ---
+            if (el === 'C' && !usedCarbonylC.has(v.id)) {
+                const doubleBondOIdx = nbrs.findIndex((n, i) =>
+                    n.value.element === 'O' && nbrEdges[i]?.bondType === '='
                 );
-                if (doubleBondO) {
-                    // Prüfe die anderen Nachbarn des C (außer dem =O)
-                    const otherNbrs = nbrs.filter(n => n.id !== doubleBondO.id);
-                    const hasOH = otherNbrs.some(n =>
-                        n.value.element === 'O' && this._getEdge(v.id, n.id)?.bondType === '-'
-                    );
-                    const hasOR = otherNbrs.some(n =>
-                        n.value.element === 'O' && this._getEdge(v.id, n.id)?.bondType === '-' &&
-                        this._getNeighbourVertices(n.id).filter(nn => nn.id !== v.id).length > 0
-                    );
-                    const hasNR = otherNbrs.some(n => n.value.element === 'N');
-                    const hasH = otherNbrs.some(n => n.value.element === 'H');
+                if (doubleBondOIdx !== -1) {
+                    const doubleBondO = nbrs[doubleBondOIdx];
+                    const otherNbrs = nbrs.filter((n, i) => i !== doubleBondOIdx);
+                    const otherEdges = nbrEdges.filter((e, i) => i !== doubleBondOIdx);
 
-                    // Priorisierung: Carboxyl > Ester > Amid > Aldehyd > Keton
-                    if (hasOH) {
+                    // OH: O mit nur einem Nachbarn (nur dieses Carbonyl-C)
+                    const ohO = otherNbrs.find((n, i) =>
+                        n.value.element === 'O' && otherEdges[i]?.bondType === '-' &&
+                        this._getNeighbourVertices(n.id).length === 1
+                    );
+                    // OR: O mit zwei oder mehr Nachbarn
+                    const orO = otherNbrs.find((n, i) =>
+                        n.value.element === 'O' && otherEdges[i]?.bondType === '-' &&
+                        this._getNeighbourVertices(n.id).length >= 2
+                    );
+                    const hasN = otherNbrs.some(n => n.value.element === 'N');
+                    const cNeighbors = otherNbrs.filter(n => n.value.element === 'C').length;
+
+                    if (ohO) {
                         fg.carboxyl++;
                         usedCarbonylC.add(v.id);
-                        // Markiere OH-Sauerstoff als verwendet
-                        const ohO = otherNbrs.find(n =>
-                            n.value.element === 'O' && this._getEdge(v.id, n.id)?.bondType === '-'
-                        );
-                        if (ohO) usedHydroxylO.add(ohO.id);
-                    } else if (hasOR && !hasOH) {
+                        usedO.add(ohO.id);
+                    } else if (orO) {
                         fg.ester++;
                         usedCarbonylC.add(v.id);
-                        // Markiere Alkoxy-Sauerstoff als verwendet
-                        const orO = otherNbrs.find(n =>
-                            n.value.element === 'O' && this._getEdge(v.id, n.id)?.bondType === '-'
-                        );
-                        if (orO) usedEtherO.add(orO.id);
-                    } else if (hasNR) {
+                        usedO.add(orO.id);
+                    } else if (hasN) {
                         fg.amide++;
                         usedCarbonylC.add(v.id);
-                    } else if (hasH) {
+                    } else if (cNeighbors === 0) {
+                        // Formaldehyd: C=O ohne C-Nachbarn
+                        fg.aldehyde++;
+                        usedCarbonylC.add(v.id);
+                    } else if (cNeighbors === 1) {
                         fg.aldehyde++;
                         usedCarbonylC.add(v.id);
                     } else {
@@ -234,119 +234,105 @@ export default class DescriptionGenerator {
 
             // --- Nitril (C≡N) ---
             if (el === 'C') {
-                const tripleN = nbrs.find(n =>
-                    n.value.element === 'N' && this._getEdge(v.id, n.id)?.bondType === '#'
+                const tripleN = nbrs.find((n, i) =>
+                    n.value.element === 'N' && nbrEdges[i]?.bondType === '#'
                 );
                 if (tripleN) {
                     fg.nitrile++;
+                    usedN.add(tripleN.id);
                 }
             }
         }
 
-        // --- Hydroxyl (-OH an C) ---
+        // --- Hydroxyl (O mit genau einem Nachbarn, der C ist, keine Doppelbindung) ---
         for (const v of this.graph.vertices) {
-            if (usedHydroxylO.has(v.id)) continue;
+            if (usedO.has(v.id)) continue;
             const atom = v.value;
             if (atom.element !== 'O') continue;
 
             const nbrs = this._getNeighbourVertices(v.id);
-            const hasH = nbrs.some(n => n.value.element === 'H');
-            const hasC = nbrs.some(n => n.value.element === 'C');
-            // Kein Carbonyl-C (d.h. kein Nachbar-C mit =O zu diesem O)
-            const isCarbonylO = nbrs.some(n => {
-                if (n.value.element !== 'C') return false;
-                const edge = this._getEdge(v.id, n.id);
-                return edge?.bondType === '=';
-            });
+            const nbrEdges = nbrs.map(n => this._getEdge(v.id, n.id));
+            const hasDoubleBond = nbrEdges.some(e => e?.bondType === '=' || e?.bondType === '#');
+            const cNeighbors = nbrs.filter(n => n.value.element === 'C').length;
 
-            if (hasH && hasC && !isCarbonylO) {
+            // O mit genau einem Nachbarn (C) und keine Doppelbindung → OH
+            if (nbrs.length === 1 && cNeighbors === 1 && !hasDoubleBond) {
                 fg.hydroxyl++;
-                usedHydroxylO.add(v.id);
+                usedO.add(v.id);
             }
         }
 
-        // --- Ether (R-O-R', nicht in Ester/Carboxyl) ---
+        // --- Ether (O mit 2+ C-Nachbarn, nicht verwendet, keine Doppelbindung) ---
         for (const v of this.graph.vertices) {
-            if (usedEtherO.has(v.id)) continue;
+            if (usedO.has(v.id)) continue;
             const atom = v.value;
             if (atom.element !== 'O') continue;
 
             const nbrs = this._getNeighbourVertices(v.id);
-            // Kein H, keine Carbonyl-Doppelbindung
-            const hasH = nbrs.some(n => n.value.element === 'H');
-            const isDoubleBonded = nbrs.some(n => {
-                const edge = this._getEdge(v.id, n.id);
-                return edge?.bondType === '=' || edge?.bondType === '#';
-            });
-            const carbonCount = nbrs.filter(n => n.value.element === 'C').length;
+            const nbrEdges = nbrs.map(n => this._getEdge(v.id, n.id));
+            const hasDoubleBond = nbrEdges.some(e => e?.bondType === '=' || e?.bondType === '#');
+            const cNeighbors = nbrs.filter(n => n.value.element === 'C').length;
 
-            if (!hasH && !isDoubleBonded && carbonCount >= 2) {
+            if (!hasDoubleBond && cNeighbors >= 2) {
                 fg.ether++;
-                usedEtherO.add(v.id);
+                usedO.add(v.id);
             }
         }
 
-        // --- Amin (-NH2, -NHR, -NR2, nicht in Amid/Ring) ---
+        // --- Amin (N mit C, nicht aromatisch, nicht Amid, nicht Nitril, nicht Nitro) ---
         for (const v of this.graph.vertices) {
-            if (usedAmineN.has(v.id)) continue;
+            if (usedN.has(v.id)) continue;
             const atom = v.value;
             if (atom.element !== 'N') continue;
+            if (atom.isPartOfAromaticRing) continue; // Pyridin, Pyrrol etc.
 
             const nbrs = this._getNeighbourVertices(v.id);
-            // Keine Carbonyl-Doppelbindung (kein Amid)
-            const isAmideN = nbrs.some(n => {
-                if (n.value.element !== 'C') return false;
-                const otherNbrsOfC = this._getNeighbourVertices(n.id).filter(nn => nn.id !== v.id);
-                return otherNbrsOfC.some(nn => {
-                    if (nn.value.element !== 'O') return false;
-                    const edge = this._getEdge(n.id, nn.id);
-                    return edge?.bondType === '=';
-                });
-            });
+            const nbrEdges = nbrs.map(n => this._getEdge(v.id, n.id));
 
-            const hasC = nbrs.some(n => n.value.element === 'C');
-            if (hasC && !isAmideN) {
-                fg.amine++;
-                usedAmineN.add(v.id);
-            }
-        }
+            // Nitril: N mit Dreifachbindung
+            const isNitrileN = nbrEdges.some(e => e?.bondType === '#');
+            if (isNitrileN) continue;
 
-        // --- Nitro (-NO2) ---
-        for (const v of this.graph.vertices) {
-            const atom = v.value;
-            if (atom.element !== 'N') continue;
-
-            const nbrs = this._getNeighbourVertices(v.id);
+            // Nitro: N mit 2+ O-Nachbarn
             const oCount = nbrs.filter(n => n.value.element === 'O').length;
-            // Nitro hat typischerweise N mit 2 O-Nachbarn (eins =O, eins -O(-))
             if (oCount >= 2) {
                 fg.nitro++;
+                usedN.add(v.id);
+                continue;
             }
-        }
 
-        // --- Thiol (-SH) ---
-        for (const v of this.graph.vertices) {
-            const atom = v.value;
-            if (atom.element !== 'S') continue;
+            // Amid: N an Carbonyl-C
+            const isAmideN = nbrs.some(n => {
+                if (n.value.element !== 'C') return false;
+                const cnbrs = this._getNeighbourVertices(n.id);
+                const cedges = cnbrs.map(nn => this._getEdge(n.id, nn.id));
+                return cnbrs.some((nn, i) => nn.value.element === 'O' && cedges[i]?.bondType === '=');
+            });
+            if (isAmideN) continue;
 
-            const nbrs = this._getNeighbourVertices(v.id);
-            const hasH = nbrs.some(n => n.value.element === 'H');
             const hasC = nbrs.some(n => n.value.element === 'C');
-            if (hasH && hasC) {
-                fg.thiol++;
+            if (hasC) {
+                fg.amine++;
+                usedN.add(v.id);
             }
         }
 
-        // --- Thioether (R-S-R') ---
+        // --- Thiol (S mit genau einem Nachbarn, keine Doppelbindung) ---
         for (const v of this.graph.vertices) {
             const atom = v.value;
             if (atom.element !== 'S') continue;
 
             const nbrs = this._getNeighbourVertices(v.id);
-            const hasH = nbrs.some(n => n.value.element === 'H');
-            const carbonCount = nbrs.filter(n => n.value.element === 'C').length;
-            if (!hasH && carbonCount >= 2) {
-                fg.thioether++;
+            const nbrEdges = nbrs.map(n => this._getEdge(v.id, n.id));
+            const hasDoubleBond = nbrEdges.some(e => e?.bondType === '=' || e?.bondType === '#');
+
+            if (nbrs.length === 1 && !hasDoubleBond) {
+                fg.thiol++;
+            } else if (nbrs.length >= 2 && !hasDoubleBond) {
+                const cNeighbors = nbrs.filter(n => n.value.element === 'C').length;
+                if (cNeighbors >= 2) {
+                    fg.thioether++;
+                }
             }
         }
 

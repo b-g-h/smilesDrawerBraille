@@ -14454,60 +14454,53 @@
         iodide: 0
       };
       const usedCarbonylC = /* @__PURE__ */ new Set();
-      const usedHydroxylO = /* @__PURE__ */ new Set();
-      const usedEtherO = /* @__PURE__ */ new Set();
-      const usedAmineN = /* @__PURE__ */ new Set();
+      const usedO = /* @__PURE__ */ new Set();
+      const usedN = /* @__PURE__ */ new Set();
       for (const v of this.graph.vertices) {
         const atom = v.value;
         const el = atom.element;
         const nbrs = this._getNeighbourVertices(v.id);
-        if (el === "C") {
-          const doubleBondO = nbrs.find(
-            (n) => {
+        const nbrEdges = nbrs.map((n) => this._getEdge(v.id, n.id));
+        if (el === "C" && !usedCarbonylC.has(v.id)) {
+          const doubleBondOIdx = nbrs.findIndex(
+            (n, i) => {
               var _a;
-              return n.value.element === "O" && ((_a = this._getEdge(v.id, n.id)) == null ? void 0 : _a.bondType) === "=";
+              return n.value.element === "O" && ((_a = nbrEdges[i]) == null ? void 0 : _a.bondType) === "=";
             }
           );
-          if (doubleBondO) {
-            const otherNbrs = nbrs.filter((n) => n.id !== doubleBondO.id);
-            const hasOH = otherNbrs.some(
-              (n) => {
+          if (doubleBondOIdx !== -1) {
+            const doubleBondO = nbrs[doubleBondOIdx];
+            const otherNbrs = nbrs.filter((n, i) => i !== doubleBondOIdx);
+            const otherEdges = nbrEdges.filter((e, i) => i !== doubleBondOIdx);
+            const ohO = otherNbrs.find(
+              (n, i) => {
                 var _a;
-                return n.value.element === "O" && ((_a = this._getEdge(v.id, n.id)) == null ? void 0 : _a.bondType) === "-";
+                return n.value.element === "O" && ((_a = otherEdges[i]) == null ? void 0 : _a.bondType) === "-" && this._getNeighbourVertices(n.id).length === 1;
               }
             );
-            const hasOR = otherNbrs.some(
-              (n) => {
+            const orO = otherNbrs.find(
+              (n, i) => {
                 var _a;
-                return n.value.element === "O" && ((_a = this._getEdge(v.id, n.id)) == null ? void 0 : _a.bondType) === "-" && this._getNeighbourVertices(n.id).filter((nn) => nn.id !== v.id).length > 0;
+                return n.value.element === "O" && ((_a = otherEdges[i]) == null ? void 0 : _a.bondType) === "-" && this._getNeighbourVertices(n.id).length >= 2;
               }
             );
-            const hasNR = otherNbrs.some((n) => n.value.element === "N");
-            const hasH = otherNbrs.some((n) => n.value.element === "H");
-            if (hasOH) {
+            const hasN = otherNbrs.some((n) => n.value.element === "N");
+            const cNeighbors = otherNbrs.filter((n) => n.value.element === "C").length;
+            if (ohO) {
               fg.carboxyl++;
               usedCarbonylC.add(v.id);
-              const ohO = otherNbrs.find(
-                (n) => {
-                  var _a;
-                  return n.value.element === "O" && ((_a = this._getEdge(v.id, n.id)) == null ? void 0 : _a.bondType) === "-";
-                }
-              );
-              if (ohO) usedHydroxylO.add(ohO.id);
-            } else if (hasOR && !hasOH) {
+              usedO.add(ohO.id);
+            } else if (orO) {
               fg.ester++;
               usedCarbonylC.add(v.id);
-              const orO = otherNbrs.find(
-                (n) => {
-                  var _a;
-                  return n.value.element === "O" && ((_a = this._getEdge(v.id, n.id)) == null ? void 0 : _a.bondType) === "-";
-                }
-              );
-              if (orO) usedEtherO.add(orO.id);
-            } else if (hasNR) {
+              usedO.add(orO.id);
+            } else if (hasN) {
               fg.amide++;
               usedCarbonylC.add(v.id);
-            } else if (hasH) {
+            } else if (cNeighbors === 0) {
+              fg.aldehyde++;
+              usedCarbonylC.add(v.id);
+            } else if (cNeighbors === 1) {
               fg.aldehyde++;
               usedCarbonylC.add(v.id);
             } else {
@@ -14518,96 +14511,87 @@
         }
         if (el === "C") {
           const tripleN = nbrs.find(
-            (n) => {
+            (n, i) => {
               var _a;
-              return n.value.element === "N" && ((_a = this._getEdge(v.id, n.id)) == null ? void 0 : _a.bondType) === "#";
+              return n.value.element === "N" && ((_a = nbrEdges[i]) == null ? void 0 : _a.bondType) === "#";
             }
           );
           if (tripleN) {
             fg.nitrile++;
+            usedN.add(tripleN.id);
           }
         }
       }
       for (const v of this.graph.vertices) {
-        if (usedHydroxylO.has(v.id)) continue;
+        if (usedO.has(v.id)) continue;
         const atom = v.value;
         if (atom.element !== "O") continue;
         const nbrs = this._getNeighbourVertices(v.id);
-        const hasH = nbrs.some((n) => n.value.element === "H");
-        const hasC = nbrs.some((n) => n.value.element === "C");
-        const isCarbonylO = nbrs.some((n) => {
-          if (n.value.element !== "C") return false;
-          const edge = this._getEdge(v.id, n.id);
-          return (edge == null ? void 0 : edge.bondType) === "=";
-        });
-        if (hasH && hasC && !isCarbonylO) {
+        const nbrEdges = nbrs.map((n) => this._getEdge(v.id, n.id));
+        const hasDoubleBond = nbrEdges.some((e) => (e == null ? void 0 : e.bondType) === "=" || (e == null ? void 0 : e.bondType) === "#");
+        const cNeighbors = nbrs.filter((n) => n.value.element === "C").length;
+        if (nbrs.length === 1 && cNeighbors === 1 && !hasDoubleBond) {
           fg.hydroxyl++;
-          usedHydroxylO.add(v.id);
+          usedO.add(v.id);
         }
       }
       for (const v of this.graph.vertices) {
-        if (usedEtherO.has(v.id)) continue;
+        if (usedO.has(v.id)) continue;
         const atom = v.value;
         if (atom.element !== "O") continue;
         const nbrs = this._getNeighbourVertices(v.id);
-        const hasH = nbrs.some((n) => n.value.element === "H");
-        const isDoubleBonded = nbrs.some((n) => {
-          const edge = this._getEdge(v.id, n.id);
-          return (edge == null ? void 0 : edge.bondType) === "=" || (edge == null ? void 0 : edge.bondType) === "#";
-        });
-        const carbonCount = nbrs.filter((n) => n.value.element === "C").length;
-        if (!hasH && !isDoubleBonded && carbonCount >= 2) {
+        const nbrEdges = nbrs.map((n) => this._getEdge(v.id, n.id));
+        const hasDoubleBond = nbrEdges.some((e) => (e == null ? void 0 : e.bondType) === "=" || (e == null ? void 0 : e.bondType) === "#");
+        const cNeighbors = nbrs.filter((n) => n.value.element === "C").length;
+        if (!hasDoubleBond && cNeighbors >= 2) {
           fg.ether++;
-          usedEtherO.add(v.id);
+          usedO.add(v.id);
         }
       }
       for (const v of this.graph.vertices) {
-        if (usedAmineN.has(v.id)) continue;
+        if (usedN.has(v.id)) continue;
         const atom = v.value;
         if (atom.element !== "N") continue;
+        if (atom.isPartOfAromaticRing) continue;
         const nbrs = this._getNeighbourVertices(v.id);
-        const isAmideN = nbrs.some((n) => {
-          if (n.value.element !== "C") return false;
-          const otherNbrsOfC = this._getNeighbourVertices(n.id).filter((nn) => nn.id !== v.id);
-          return otherNbrsOfC.some((nn) => {
-            if (nn.value.element !== "O") return false;
-            const edge = this._getEdge(n.id, nn.id);
-            return (edge == null ? void 0 : edge.bondType) === "=";
-          });
-        });
-        const hasC = nbrs.some((n) => n.value.element === "C");
-        if (hasC && !isAmideN) {
-          fg.amine++;
-          usedAmineN.add(v.id);
-        }
-      }
-      for (const v of this.graph.vertices) {
-        const atom = v.value;
-        if (atom.element !== "N") continue;
-        const nbrs = this._getNeighbourVertices(v.id);
+        const nbrEdges = nbrs.map((n) => this._getEdge(v.id, n.id));
+        const isNitrileN = nbrEdges.some((e) => (e == null ? void 0 : e.bondType) === "#");
+        if (isNitrileN) continue;
         const oCount = nbrs.filter((n) => n.value.element === "O").length;
         if (oCount >= 2) {
           fg.nitro++;
+          usedN.add(v.id);
+          continue;
         }
-      }
-      for (const v of this.graph.vertices) {
-        const atom = v.value;
-        if (atom.element !== "S") continue;
-        const nbrs = this._getNeighbourVertices(v.id);
-        const hasH = nbrs.some((n) => n.value.element === "H");
+        const isAmideN = nbrs.some((n) => {
+          if (n.value.element !== "C") return false;
+          const cnbrs = this._getNeighbourVertices(n.id);
+          const cedges = cnbrs.map((nn) => this._getEdge(n.id, nn.id));
+          return cnbrs.some((nn, i) => {
+            var _a;
+            return nn.value.element === "O" && ((_a = cedges[i]) == null ? void 0 : _a.bondType) === "=";
+          });
+        });
+        if (isAmideN) continue;
         const hasC = nbrs.some((n) => n.value.element === "C");
-        if (hasH && hasC) {
-          fg.thiol++;
+        if (hasC) {
+          fg.amine++;
+          usedN.add(v.id);
         }
       }
       for (const v of this.graph.vertices) {
         const atom = v.value;
         if (atom.element !== "S") continue;
         const nbrs = this._getNeighbourVertices(v.id);
-        const hasH = nbrs.some((n) => n.value.element === "H");
-        const carbonCount = nbrs.filter((n) => n.value.element === "C").length;
-        if (!hasH && carbonCount >= 2) {
-          fg.thioether++;
+        const nbrEdges = nbrs.map((n) => this._getEdge(v.id, n.id));
+        const hasDoubleBond = nbrEdges.some((e) => (e == null ? void 0 : e.bondType) === "=" || (e == null ? void 0 : e.bondType) === "#");
+        if (nbrs.length === 1 && !hasDoubleBond) {
+          fg.thiol++;
+        } else if (nbrs.length >= 2 && !hasDoubleBond) {
+          const cNeighbors = nbrs.filter((n) => n.value.element === "C").length;
+          if (cNeighbors >= 2) {
+            fg.thioether++;
+          }
         }
       }
       for (const v of this.graph.vertices) {
