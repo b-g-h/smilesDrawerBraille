@@ -63,7 +63,8 @@ export default class DescriptionGenerator {
 
         const ringDescs = this.rings.map(ring => {
             const size = ring.members.length;
-            const isAromatic = ring.isBenzeneLike ? ring.isBenzeneLike(this.graph.vertices) : false;
+            const isAromatic = ring.members.every(vid => this.graph.vertices[vid].value.isPartOfAromaticRing)
+                || (ring.isBenzeneLike && ring.isBenzeneLike(this.graph.vertices));
             const isBridged = ring.isBridged;
             const isFused = ring.isFused;
             const isSpiro = ring.isSpiro;
