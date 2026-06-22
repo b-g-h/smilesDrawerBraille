@@ -14381,21 +14381,269 @@
     }
     _describeFunctionalGroups() {
       const groups = [];
-      if (this._hasGroup("C(=O)O")) groups.push("eine Carboxylgruppe");
-      else if (this._hasGroup("C(=O)")) groups.push("eine Carbonylgruppe");
-      if (this._hasGroup("O", true)) {
-        const ohCount = this._countOHGroups();
-        if (ohCount === 1) groups.push("eine Hydroxylgruppe");
-        else if (ohCount > 1) groups.push(`${ohCount} Hydroxylgruppen`);
+      const fg = this._detectFunctionalGroups();
+      if (fg.carboxyl > 0) {
+        groups.push(fg.carboxyl === 1 ? "eine Carboxylgruppe" : `${fg.carboxyl} Carboxylgruppen`);
       }
-      if (this._hasGroup("N", true)) {
-        const nCount = this._countNitrogenGroups();
-        if (nCount === 1) groups.push("ein Stickstoffatom in einer funktionellen Gruppe");
-        else if (nCount > 1) groups.push(`${nCount} Stickstoffatome in funktionellen Gruppen`);
+      if (fg.ester > 0) {
+        groups.push(fg.ester === 1 ? "eine Estergruppe" : `${fg.ester} Estergruppen`);
       }
-      if (this._hasEther()) groups.push("eine Etherbindung");
+      if (fg.amide > 0) {
+        groups.push(fg.amide === 1 ? "eine Amidgruppe" : `${fg.amide} Amidgruppen`);
+      }
+      if (fg.aldehyde > 0) {
+        groups.push(fg.aldehyde === 1 ? "eine Aldehydgruppe" : `${fg.aldehyde} Aldehydgruppen`);
+      }
+      if (fg.ketone > 0) {
+        groups.push(fg.ketone === 1 ? "eine Ketogruppe" : `${fg.ketone} Ketogruppen`);
+      }
+      if (fg.hydroxyl > 0) {
+        groups.push(fg.hydroxyl === 1 ? "eine Hydroxylgruppe" : `${fg.hydroxyl} Hydroxylgruppen`);
+      }
+      if (fg.ether > 0) {
+        groups.push(fg.ether === 1 ? "eine Etherbindung" : `${fg.ether} Etherbindungen`);
+      }
+      if (fg.amine > 0) {
+        groups.push(fg.amine === 1 ? "eine Aminogruppe" : `${fg.amine} Aminogruppen`);
+      }
+      if (fg.nitro > 0) {
+        groups.push(fg.nitro === 1 ? "eine Nitrogruppe" : `${fg.nitro} Nitrogruppen`);
+      }
+      if (fg.nitrile > 0) {
+        groups.push(fg.nitrile === 1 ? "eine Nitrilgruppe" : `${fg.nitrile} Nitrilgruppen`);
+      }
+      if (fg.thiol > 0) {
+        groups.push(fg.thiol === 1 ? "eine Thiolgruppe" : `${fg.thiol} Thiolgruppen`);
+      }
+      if (fg.thioether > 0) {
+        groups.push(fg.thioether === 1 ? "eine Thioetherbindung" : `${fg.thioether} Thioetherbindungen`);
+      }
+      if (fg.halogen > 0) {
+        const halogenList = [];
+        if (fg.fluoride > 0) halogenList.push(`${fg.fluoride} Fluor`);
+        if (fg.chloride > 0) halogenList.push(`${fg.chloride} Chlor`);
+        if (fg.bromide > 0) halogenList.push(`${fg.bromide} Brom`);
+        if (fg.iodide > 0) halogenList.push(`${fg.iodide} Iod`);
+        groups.push(`Halogenatome: ${halogenList.join(", ")}`);
+      }
       if (groups.length === 0) return "";
       return `Funktionelle Gruppen: ${this._joinList(groups)}.`;
+    }
+    /**
+     * Graph-basierte Erkennung funktioneller Gruppen.
+     * Gibt ein Objekt mit Zählern zurück.
+     */
+    _detectFunctionalGroups() {
+      const fg = {
+        carboxyl: 0,
+        ester: 0,
+        amide: 0,
+        aldehyde: 0,
+        ketone: 0,
+        hydroxyl: 0,
+        ether: 0,
+        amine: 0,
+        nitro: 0,
+        nitrile: 0,
+        thiol: 0,
+        thioether: 0,
+        halogen: 0,
+        fluoride: 0,
+        chloride: 0,
+        bromide: 0,
+        iodide: 0
+      };
+      const usedCarbonylC = /* @__PURE__ */ new Set();
+      const usedHydroxylO = /* @__PURE__ */ new Set();
+      const usedEtherO = /* @__PURE__ */ new Set();
+      const usedAmineN = /* @__PURE__ */ new Set();
+      for (const v of this.graph.vertices) {
+        const atom = v.value;
+        const el = atom.element;
+        const nbrs = this._getNeighbourVertices(v.id);
+        if (el === "C") {
+          const doubleBondO = nbrs.find(
+            (n) => {
+              var _a;
+              return n.value.element === "O" && ((_a = this._getEdge(v.id, n.id)) == null ? void 0 : _a.bondType) === "=";
+            }
+          );
+          if (doubleBondO) {
+            const otherNbrs = nbrs.filter((n) => n.id !== doubleBondO.id);
+            const hasOH = otherNbrs.some(
+              (n) => {
+                var _a;
+                return n.value.element === "O" && ((_a = this._getEdge(v.id, n.id)) == null ? void 0 : _a.bondType) === "-";
+              }
+            );
+            const hasOR = otherNbrs.some(
+              (n) => {
+                var _a;
+                return n.value.element === "O" && ((_a = this._getEdge(v.id, n.id)) == null ? void 0 : _a.bondType) === "-" && this._getNeighbourVertices(n.id).filter((nn) => nn.id !== v.id).length > 0;
+              }
+            );
+            const hasNR = otherNbrs.some((n) => n.value.element === "N");
+            const hasH = otherNbrs.some((n) => n.value.element === "H");
+            if (hasOH) {
+              fg.carboxyl++;
+              usedCarbonylC.add(v.id);
+              const ohO = otherNbrs.find(
+                (n) => {
+                  var _a;
+                  return n.value.element === "O" && ((_a = this._getEdge(v.id, n.id)) == null ? void 0 : _a.bondType) === "-";
+                }
+              );
+              if (ohO) usedHydroxylO.add(ohO.id);
+            } else if (hasOR && !hasOH) {
+              fg.ester++;
+              usedCarbonylC.add(v.id);
+              const orO = otherNbrs.find(
+                (n) => {
+                  var _a;
+                  return n.value.element === "O" && ((_a = this._getEdge(v.id, n.id)) == null ? void 0 : _a.bondType) === "-";
+                }
+              );
+              if (orO) usedEtherO.add(orO.id);
+            } else if (hasNR) {
+              fg.amide++;
+              usedCarbonylC.add(v.id);
+            } else if (hasH) {
+              fg.aldehyde++;
+              usedCarbonylC.add(v.id);
+            } else {
+              fg.ketone++;
+              usedCarbonylC.add(v.id);
+            }
+          }
+        }
+        if (el === "C") {
+          const tripleN = nbrs.find(
+            (n) => {
+              var _a;
+              return n.value.element === "N" && ((_a = this._getEdge(v.id, n.id)) == null ? void 0 : _a.bondType) === "#";
+            }
+          );
+          if (tripleN) {
+            fg.nitrile++;
+          }
+        }
+      }
+      for (const v of this.graph.vertices) {
+        if (usedHydroxylO.has(v.id)) continue;
+        const atom = v.value;
+        if (atom.element !== "O") continue;
+        const nbrs = this._getNeighbourVertices(v.id);
+        const hasH = nbrs.some((n) => n.value.element === "H");
+        const hasC = nbrs.some((n) => n.value.element === "C");
+        const isCarbonylO = nbrs.some((n) => {
+          if (n.value.element !== "C") return false;
+          const edge = this._getEdge(v.id, n.id);
+          return (edge == null ? void 0 : edge.bondType) === "=";
+        });
+        if (hasH && hasC && !isCarbonylO) {
+          fg.hydroxyl++;
+          usedHydroxylO.add(v.id);
+        }
+      }
+      for (const v of this.graph.vertices) {
+        if (usedEtherO.has(v.id)) continue;
+        const atom = v.value;
+        if (atom.element !== "O") continue;
+        const nbrs = this._getNeighbourVertices(v.id);
+        const hasH = nbrs.some((n) => n.value.element === "H");
+        const isDoubleBonded = nbrs.some((n) => {
+          const edge = this._getEdge(v.id, n.id);
+          return (edge == null ? void 0 : edge.bondType) === "=" || (edge == null ? void 0 : edge.bondType) === "#";
+        });
+        const carbonCount = nbrs.filter((n) => n.value.element === "C").length;
+        if (!hasH && !isDoubleBonded && carbonCount >= 2) {
+          fg.ether++;
+          usedEtherO.add(v.id);
+        }
+      }
+      for (const v of this.graph.vertices) {
+        if (usedAmineN.has(v.id)) continue;
+        const atom = v.value;
+        if (atom.element !== "N") continue;
+        const nbrs = this._getNeighbourVertices(v.id);
+        const isAmideN = nbrs.some((n) => {
+          if (n.value.element !== "C") return false;
+          const otherNbrsOfC = this._getNeighbourVertices(n.id).filter((nn) => nn.id !== v.id);
+          return otherNbrsOfC.some((nn) => {
+            if (nn.value.element !== "O") return false;
+            const edge = this._getEdge(n.id, nn.id);
+            return (edge == null ? void 0 : edge.bondType) === "=";
+          });
+        });
+        const hasC = nbrs.some((n) => n.value.element === "C");
+        if (hasC && !isAmideN) {
+          fg.amine++;
+          usedAmineN.add(v.id);
+        }
+      }
+      for (const v of this.graph.vertices) {
+        const atom = v.value;
+        if (atom.element !== "N") continue;
+        const nbrs = this._getNeighbourVertices(v.id);
+        const oCount = nbrs.filter((n) => n.value.element === "O").length;
+        if (oCount >= 2) {
+          fg.nitro++;
+        }
+      }
+      for (const v of this.graph.vertices) {
+        const atom = v.value;
+        if (atom.element !== "S") continue;
+        const nbrs = this._getNeighbourVertices(v.id);
+        const hasH = nbrs.some((n) => n.value.element === "H");
+        const hasC = nbrs.some((n) => n.value.element === "C");
+        if (hasH && hasC) {
+          fg.thiol++;
+        }
+      }
+      for (const v of this.graph.vertices) {
+        const atom = v.value;
+        if (atom.element !== "S") continue;
+        const nbrs = this._getNeighbourVertices(v.id);
+        const hasH = nbrs.some((n) => n.value.element === "H");
+        const carbonCount = nbrs.filter((n) => n.value.element === "C").length;
+        if (!hasH && carbonCount >= 2) {
+          fg.thioether++;
+        }
+      }
+      for (const v of this.graph.vertices) {
+        const el = v.value.element;
+        const nbrs = this._getNeighbourVertices(v.id);
+        const hasC = nbrs.some((n) => n.value.element === "C");
+        if (hasC) {
+          if (el === "F") {
+            fg.fluoride++;
+            fg.halogen++;
+          } else if (el === "Cl") {
+            fg.chloride++;
+            fg.halogen++;
+          } else if (el === "Br") {
+            fg.bromide++;
+            fg.halogen++;
+          } else if (el === "I") {
+            fg.iodide++;
+            fg.halogen++;
+          }
+        }
+      }
+      return fg;
+    }
+    /**
+     * Hilfsmethode: Gibt die Nachbar-Vertices eines Vertex zurück.
+     */
+    _getNeighbourVertices(vertexId) {
+      const vertex = this.graph.vertices[vertexId];
+      return vertex.neighbours.map((nid) => this.graph.vertices[nid]);
+    }
+    /**
+     * Hilfsmethode: Gibt die Kante zwischen zwei Vertices zurück.
+     */
+    _getEdge(vertexIdA, vertexIdB) {
+      return this.graph.getEdge(vertexIdA, vertexIdB);
     }
     _describeBonds() {
       let single = 0, double = 0, triple = 0, aromatic = 0;
@@ -14437,43 +14685,6 @@
     _joinList(items) {
       if (items.length === 1) return items[0];
       return items.slice(0, -1).join(", ") + " und " + items[items.length - 1];
-    }
-    _hasGroup(signature, checkHetero = false) {
-      if (checkHetero) {
-        return this.graph.vertices.some((v) => v.value.element === signature);
-      }
-      return this.smiles.includes(signature);
-    }
-    _countOHGroups() {
-      let count = 0;
-      for (const v of this.graph.vertices) {
-        if (v.value.element === "O") {
-          const neighbours = v.neighbours.map((nid) => this.graph.vertices[nid]);
-          const hasH = neighbours.some((n) => n.value.element === "H");
-          const hasC = neighbours.some((n) => n.value.element === "C");
-          if ((hasH || neighbours.length === 1) && hasC) count++;
-        }
-      }
-      return count;
-    }
-    _countNitrogenGroups() {
-      let count = 0;
-      for (const v of this.graph.vertices) {
-        if (v.value.element === "N" && v.neighbours.length > 1) {
-          count++;
-        }
-      }
-      return count;
-    }
-    _hasEther() {
-      for (const v of this.graph.vertices) {
-        if (v.value.element === "O") {
-          const neighbours = v.neighbours.map((nid) => this.graph.vertices[nid]);
-          const carbonCount = neighbours.filter((n) => n.value.element === "C").length;
-          if (carbonCount >= 2) return true;
-        }
-      }
-      return false;
     }
   };
 
