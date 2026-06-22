@@ -14326,23 +14326,26 @@
     }
     _describeComposition() {
       const vertices = this.graph.vertices;
-      const total = vertices.length;
-      if (total === 0) return "";
+      if (vertices.length === 0) return "";
       const elements = {};
       for (const v of vertices) {
         const el = v.value.element;
         elements[el] = (elements[el] || 0) + 1;
       }
-      const elementList = Object.entries(elements).sort((a, b) => b[1] - a[1]).map(([el, count]) => {
+      const order = ["C", "N", "O", "S", "P", "F", "Cl", "Br", "I"];
+      const sortedEntries = Object.entries(elements).sort((a, b) => {
+        const idxA = order.indexOf(a[0]);
+        const idxB = order.indexOf(b[0]);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return a[0].localeCompare(b[0]);
+      });
+      const elementList = sortedEntries.map(([el, count]) => {
         const name = this._elementName(el);
         return count === 1 ? `ein ${name}` : `${count} ${name}e`;
       });
-      let text = `Das Molek\xFCl besteht aus insgesamt ${total} sichtbaren Atom${total !== 1 ? "en" : ""}`;
-      if (elementList.length > 0) {
-        text += `: ${this._joinList(elementList)}`;
-      }
-      text += ".";
-      return text;
+      return `Das Molek\xFCl enth\xE4lt ${this._joinList(elementList)}.`;
     }
     _describeRings() {
       if (this.rings.length === 0) return "";
