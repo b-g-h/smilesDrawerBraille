@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impressum – SmilesDrawerBraille</title>
+    <meta name="description" content="Impressum der Seite SmilesDrawerBraille (Braille-basierte chemische Strukturvisualisierung).">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <style>
+        :root {
+            --body-bg: #e4e4de7d;
+            --body-text: #3e8572;
+            --card-bg: #fff;
+            --card-border: #444;
+            --card-h3: #555;
+            --controls-bg: #fff;
+            --input-border: #3e8572;
+            --hint-text: #666;
+            --button-bg: rgb(157 212 192 / 0.8);
+            --button-border: rgb(157 212 192 / 0.4);
+            --button-text: rgb(10 10 10 / 0.9);
+            --p-text: #333;
+            --switch-text: rgb(10 10 10 / 0.9);
+            --slider-bg: #ccc;
+            --slider-checked: #3e8572;
+        }
+        [data-theme="dark"] {
+            --body-bg: #1a1a2e;
+            --body-text: #a8d5ba;
+            --card-bg: #2d2d44;
+            --card-border: #555;
+            --card-h3: #ccc;
+            --controls-bg: #2d2d44;
+            --input-border: #5a9e8a;
+            --hint-text: #aaa;
+            --button-bg: #3e8572;
+            --button-border: #5a9e8a;
+            --button-text: #fff;
+            --p-text: #ddd;
+            --switch-text: rgba(255,255,255,0.9);
+            --slider-bg: #555;
+            --slider-checked: #5a9e8a;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background: var(--body-bg);
+            color: var(--p-text);
+            line-height: 1.6;
+            transition: background 0.3s, color 0.3s;
+        }
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--controls-bg);
+            color: var(--p-text);
+            padding: 8px 16px;
+            border: 2px solid var(--input-border);
+            border-radius: 0 0 4px 0;
+            z-index: 100;
+            text-decoration: none;
+            font-weight: 600;
+            transition: top 0.3s;
+        }
+        .skip-link:focus { top: 0; }
+        *:focus-visible { outline: 3px solid var(--input-border); outline-offset: 2px; }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+        }
+        .header-row {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+            background: #1a1a2e;
+            color: #fff;
+            padding: 1rem 2rem;
+            margin: -2rem -2rem 1rem -2rem;
+            border-bottom: 4px solid #3e8572;
+        }
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            width: 100%;
+        }
+        .header-logo svg, .header-logo img {
+            height: 50px;
+            width: auto;
+            display: block;
+        }
+        .header-row h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        .switch { display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--switch-text); font-size: 0.9rem; }
+        .switch input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+        .switch .slider { position: relative; width: 40px; height: 22px; background: var(--slider-bg); border-radius: 22px; transition: 0.4s; outline: 2px solid transparent; outline-offset: 2px; }
+        .switch .slider::before { content: ""; position: absolute; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.4s; }
+        .switch input:checked + .slider { background: var(--slider-checked); }
+        .switch input:checked + .slider::before { transform: translateX(18px); }
+        .switch input:focus-visible + .slider { outline: 2px solid var(--input-border); outline-offset: 2px; }
+        main {
+            max-width: 70ch;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 1.5rem 2rem;
+            transition: background 0.3s;
+        }
+        h2 {
+            border-bottom: 2px solid var(--input-border);
+            padding-bottom: 0.3rem;
+            margin-top: 1.8rem;
+            font-size: 1.2rem;
+            color: var(--p-text);
+        }
+        h2:first-child { margin-top: 0; }
+        address { font-style: normal; line-height: 1.7; }
+        a { color: var(--body-text); }
+        .back {
+            display: inline-block;
+            margin-bottom: 1rem;
+            background: var(--button-bg);
+            color: var(--button-text);
+            border: 2px solid var(--button-border);
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .site-footer {
+            margin-top: 2rem;
+            font-size: 0.85rem;
+            color: var(--hint-text);
+        }
+        .site-footer a { color: var(--body-text); }
+    </style>
+</head>
+<body>
+    <a href="#main" class="skip-link">Zum Hauptinhalt springen</a>
+    <div class="header-row">
+        <div class="header-top">
+            <div class="header-text">
+                <h1>Impressum – SmilesDrawerBraille</h1>
+            </div>
+            <div class="header-logo">
+                <img src="mbz-logo.svg" alt="MBZ-Logo" height="50">
+            </div>
+        </div>
+        <label class="switch">
+            <input type="checkbox" id="chk-dark" onchange="toggleDarkMode()">
+            <span class="slider" aria-hidden="true"></span>
+            <span>Dunkler Modus</span>
+        </label>
+    </div>
+
+    <main id="main">
+        <a class="back" href="braille.html">← Zurück zur Anwendung</a>
+
+        <h2>Angaben gemäß § 5 TMG</h2>
+        <p>
+            SmilesDrawerBraille – Braille-basierte chemische Strukturvisualisierung:
+            rendert SMILES-Strings als taktile SVG-Strukturen mit Braille-Beschriftung
+            (Euro850) und natürlichsprachlichen Beschreibungen, für den Unterricht und die Forschung.
+            Basiert auf <a href="https://github.com/reymond-group/smilesDrawer" target="_blank" rel="noopener noreferrer">smilesDrawer</a>
+            (MIT-Lizenz, © Reymond Group).
+        </p>
+
+        <p>Verantwortlich:</p>
+        <address>
+            Land Baden-Württemberg, vertreten durch die Schloss-Schule Ilvesheim<br>
+            Schloss-Schule Ilvesheim<br>
+            Schlossstraße 23<br>
+            68549 Ilvesheim
+        </address>
+
+        <p>
+            Telefon: +49 621 4969 0<br>
+            Telefax: +49 621 4969 149<br>
+            E-Mail: <a href="mailto:poststelle@sbbzint-ilv.kv.bwl.de">poststelle@sbbzint-ilv.kv.bwl.de</a>
+        </p>
+
+        <p>Vertretungsberechtigte: Direktorin Stephanie Liebers,
+            <a href="mailto:stephanie.liebers@sbbzint-ilv.kv.bwl.de">stephanie.liebers@sbbzint-ilv.kv.bwl.de</a></p>
+
+        <h2>Kontakt</h2>
+        <p>E-Mail: <a href="mailto:poststelle@sbbzint-ilv.kv.bwl.de">poststelle@sbbzint-ilv.kv.bwl.de</a></p>
+
+        <h2>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
+        <p>Entsprechend der Angabe im Impressum oben.</p>
+
+        <h2>Haftungshinweis</h2>
+        <p>
+            Für die Inhalte extern verlinkter Seiten sind ausschließlich deren Betreiber verantwortlich.
+            Details zur Datenverarbeitung siehe <a href="datenschutz.html">Datenschutz</a>.
+        </p>
+    </main>
+
+    <footer class="site-footer">
+        SmilesDrawerBraille – Impressum · <a href="datenschutz.html">Datenschutz</a>
+    </footer>
+
+    <script>
+        function toggleDarkMode() {
+            const chk = document.getElementById('chk-dark');
+            if (chk.checked) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.getElementById('chk-dark').checked = true;
+        }
+    </script>
+</body>
+</html>
