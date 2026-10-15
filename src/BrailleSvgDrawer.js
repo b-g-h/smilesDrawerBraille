@@ -41,6 +41,8 @@ export default class BrailleSvgDrawer extends SvgDrawer {
             target.setAttributeNS(null, 'width', this.opts.width);
             target.setAttributeNS(null, 'height', this.opts.height);
         } else if (target instanceof String) {
+            target = document.getElementById(target.valueOf());
+        } else if (typeof target === 'string') {
             target = document.getElementById(target);
         }
 
