@@ -1,0 +1,17 @@
+{
+  "name": "SmilesDrawer Braille",
+  "short_name": "SmilesBraille",
+  "description": "Braille-basierte chemische Strukturvisualisierung — funktioniert offline",
+  "id": "smiles-drawer-braille",
+  "start_url": "./braille.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#50c5a9",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

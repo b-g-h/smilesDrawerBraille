@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Datenschutz – SmilesDrawerBraille</title>
     <meta name="description" content="Datenschutzerklärung der Seite SmilesDrawerBraille (Braille-basierte chemische Strukturvisualisierung).">
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#50c5a9">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <style>
         :root {
@@ -259,5 +261,14 @@
             document.getElementById('chk-dark').checked = true;
         }
     </script>
+<script>
+    // PWA: Service Worker registrieren (Offline-Cache)
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .catch((err) => console.error('SW-Registrierung fehlgeschlagen:', err));
+        });
+    }
+</script>
 </body>
 </html>

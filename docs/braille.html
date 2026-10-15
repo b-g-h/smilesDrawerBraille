@@ -4,6 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SmilesDrawer Braille – Prototyp</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#50c5a9">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <style>
         :root {
             --body-bg: #e4e4de7d;
@@ -1372,6 +1376,15 @@ async function downloadSVG(svgId, fileName) {
                 trigger.setAttribute('aria-expanded', isOpen);
             });
         })();
+    </script>
+    <script>
+        // PWA: Service Worker registrieren (Offline-Cache)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .catch((err) => console.error('SW-Registrierung fehlgeschlagen:', err));
+            });
+        }
     </script>
 </body>
 </html>
